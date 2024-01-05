@@ -4,8 +4,8 @@
 #ifndef POLYK_CLASSIFY_H
 #define POLYK_CLASSIFY_H
 
-#include <sys/stat.h>
-#include <err.h>
+//#include <sys/stat.h>
+//#include <err.h>
 #include <cassert>
 #include <cmath>
 #include <string>
@@ -196,7 +196,7 @@ namespace pecco {
     }
     double getProbability (ny::fv_t& fv) {
       if (! is_binary_classification ())
-        errx (1, HERE "sorry, probability output is unsupported.");
+        my_errx (1, "%s", "sorry, probability output is unsupported.");
       double score = 0;
       classify <false, BINARY> (fv, &score);
       return _sigmoid (score);
@@ -212,7 +212,7 @@ namespace pecco {
     }
     void printProb (const ny::uint li, const double* score) const {
       if (! is_binary_classification ())
-        errx (1, HERE "no probability output is supported for multi-class kernel model");
+        my_errx (1, "%s", "no probability output is supported for multi-class kernel model");
       const double prob = li == _tli ? _sigmoid (*score) : 1 - _sigmoid (*score);
       std::fprintf (stdout, "%s %f", _li2l[li], prob);
     }

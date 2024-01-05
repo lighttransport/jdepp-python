@@ -19,6 +19,8 @@
 #include "config.h"
 #endif
 
+#include "io-util.hh"
+
 #ifndef USE_CEDAR
 #define USE_CEDAR
 #endif
@@ -46,6 +48,22 @@
 #else
 #define PROFILE(e) ((void)0)
 #endif
+
+// NOTE: empty va args is not allowed for MSVC
+#define my_errx(retcode, fmt, ...) do { \
+  fprintf(stderr, "jdepp: "); \
+  fprintf(stderr, "%s:%d:%s: ", __FILE__, __LINE__, __func__); \
+  fprintf(stderr, fmt, __VA_ARGS__); \
+  fprintf(stderr, "\n");\
+  exit(retcode); \
+} while(0)
+
+#define my_warnx(fmt, ...) do { \
+  fprintf(stdout, "jdepp: "); \
+  fprintf(stdout, "%s:%d:%s: ", __FILE__, __LINE__, __func__); \
+  fprintf(stdout, fmt, __VA_ARGS__); \
+  fprintf(stdout, "\n");\
+} while(0)
 
 namespace ny {
   // type alias
@@ -139,12 +157,21 @@ namespace ny {
   };
   // getline wrapper
   static inline bool getLine (FILE*& fp, char*& line, size_t& read) {
+#if 0
 #ifdef __APPLE__
     if ((line = fgetln (fp, &read)) == NULL) return false;
 #else
     static ssize_t read_ = 0; static size_t size = 0; // static for inline
     if ((read_ = getline (&line, &size, fp)) == -1) return false;
     read = read_;
+#endif
+
+#else
+    const size_t maxlen = 1024ull*1024ull*1024ull; // 1GB
+    read = ioutil::my_getline(fp, line, maxlen);
+    if (read == -1) {
+      return false;
+    }
 #endif
     *(line + read - 1) = '\0';
     return true;

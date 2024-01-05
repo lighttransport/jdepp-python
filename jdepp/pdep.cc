@@ -6,7 +6,7 @@
 namespace pdep {
 
   static const char* input0[] = { "raw", "chunk", "depnd" };
-  
+
   bool chunk_t::setup (const dict_t* dict, const int next) {
     particle_feature_bits.resize (dict->particle_feature_bit_len (), 0);
     if ((_token_num = next - _mzero) == 0) return false;
@@ -28,7 +28,7 @@ namespace pdep {
     }
     if (head_id < 0 || head_id > id) return true;
 #ifndef NDEBUG
-    warnx ("\tbroken dependency?: %u->%d", id, did);
+    //my_warnx ("\tbroken dependency?: %u->%d", id, did);
 #endif
     return false;
   }
@@ -128,7 +128,7 @@ namespace pdep {
     // put this tail for assertion
     static ny::uint fmax = 0;
     if (fmax && _fi != fmax)
-      errx (1, HERE "feature offset broken; revert the change in features.");
+      my_errx (1, "%s", "feature offset broken; revert the change in features.");
     fmax = _fi;
   }
   void parser::_event_gen_from_tuple (const int i, const int j) {
@@ -172,7 +172,7 @@ namespace pdep {
     // put this tail for assertion
     static ny::uint fmax = 0;
     if (fmax && _fi != fmax)
-      errx (1, HERE "feature offset broken; revert the change in features.");
+      my_errx (1, "%s", "feature offset broken; revert the change in features.");
     fmax = _fi;
   }
   void parser::_event_gen_from_tuple (const int i, const int j, const int k) {
@@ -232,7 +232,7 @@ namespace pdep {
     // put this tail for assertion
     static ny::uint fmax = 0;
     if (fmax && _fi != fmax)
-      errx (1, HERE "feature offset broken; revert the change in features.");
+      my_errx (1, "%s", "feature offset broken; revert the change in features.");
     fmax = _fi;
   }
 #if defined (USE_OPAL) || defined (USE_MAXENT)
@@ -501,7 +501,7 @@ namespace pdep {
     //
     char *r = _s->postagged () + len - 4;
     if (len < 4 || *r != 'E' || *(r+1) != 'O' || *(r+2) != 'S' || *(r+3) != '\n')
-      errx (1, HERE "found a tagged sentence that is not EOS-terminated.");
+      my_errx (1, "%s", "found a tagged sentence that is not EOS-terminated.");
     for (char* p (_s->postagged ()), *q (p); p != r; p = ++q) {
       while (q != r && *q != '\n') ++q;
       if (! _opt.ignore || std::strncmp (p, _opt.ignore, _opt.ignore_len) != 0)
@@ -521,7 +521,7 @@ namespace pdep {
     //
     char *r = _s->postagged () + len - 4;
     if (len < 4 || *r != 'E' || *(r+1) != 'O' || *(r+2) != 'S' || *(r+3) != '\n')
-      errx (1, HERE "found a tagged sentence that is not EOS-terminated.");
+      my_errx (1, "%s", "found a tagged sentence that is not EOS-terminated.");
     for (char* p (_s->postagged ()), *q (p); p != r; p = ++q) {
       while (q != r && *q != '\n') ++q;
       if (! _opt.ignore || std::strncmp (p, _opt.ignore, _opt.ignore_len) != 0) {
@@ -546,7 +546,7 @@ namespace pdep {
 #ifdef USE_AS_STANDALONE
     if (_opt.input == RAW) {
       if (! _tagger)
-        errx (1, HERE "fail to invoke MeCab; you may want to set [-d].");
+        my_errx (1, "%s", "fail to invoke MeCab; you may want to set [-d].");
       char header[1024];
       char*  line = 0;
       size_t read = 0;
@@ -579,7 +579,7 @@ namespace pdep {
       int fd = 0; // stdin
       if (MODE != PARSE) {
         if ((fd = open (_opt.train, O_RDONLY)) == -1)
-          errx (1, HERE "no such file: %s", _opt.train);
+          my_errx (1, "no such file: %s", _opt.train);
         std::string model (_opt.model_dir);
         model += "/"; model += input0[_opt.input];
         if (_opt.input == DEPND) {
@@ -618,7 +618,7 @@ namespace pdep {
               std::fwrite (p, sizeof (char), p_end - p, stdout);
               p = p_end;
             } else {
-              warnx ("found a tagged sentence that is not EOS-terminated.");
+              my_warnx ("%s", "found a tagged sentence that is not EOS-terminated.");
               break;
             }
           }
@@ -698,7 +698,7 @@ namespace pdep {
       }
       close (fd);
       if (avail == 0 && q == q_end)
-        errx (1, HERE "set a larger value to IOBUF_SIZE.");
+        my_errx (1, "%s", "set a larger value to IOBUF_SIZE.");
       if (MODE != PARSE) {
         std::fprintf (stderr, "\r%s: %ld sent. processed.", mode[MODE], n);
         std::fclose (_writer);
@@ -740,7 +740,7 @@ namespace pdep {
           case SGD:   _libme->use_SGD ();
           case OWLQN: _libme->use_l1_regularizer (_maxent_opt.reg_cost); break;
           case LBFGS: _libme->use_l2_regularizer (_maxent_opt.reg_cost); break;
-          default: errx (1, HERE "MAXENT optimizer disabled.");
+          default: my_errx (1, "%s", "MAXENT optimizer disabled.");
         }
         _libme->train ();
         _libme->save_to_file (model);
@@ -799,7 +799,7 @@ namespace pdep {
       }
 #ifdef USE_JUMAN_POS
     if (i < NUM_FIELD)
-      errx (1, HERE "# fields is less than %d.", NUM_FIELD);
+      my_errx (1, "# fields is less than %d.", NUM_FIELD);
 #endif
   }
   // morphological dictionary are extracted from the training data
@@ -815,7 +815,7 @@ namespace pdep {
       std::set <ny::uint> particle_feature_ids;
       // insert some mandatory particles
       FILE* reader = std::fopen (_opt.train, "r");
-      if (! reader) errx (1, HERE "no such file: %s", _opt.train);
+      if (! reader) my_errx (1, "no such file: %s", _opt.train);
       char* line = 0;
       size_t read = 0;
       while (ny::getLine (reader, line, read))
@@ -845,7 +845,7 @@ namespace pdep {
       const ny::uint num_particle_features = static_cast <ny::uint> (particle_feature_ids.size ());
       const ny::uint num_lexical_features  = static_cast <ny::uint> (sbag.size ());
       if (num_particle_features == 0)
-        errx (1, HERE "no particles found in %s\n"
+        my_errx (1, "no particles found in %s\n"
               "\tthe charset / posset may mismatch.",
               _opt.train);
       FILE* writer = std::fopen (dict.c_str (), "wb");
@@ -892,7 +892,7 @@ namespace pdep {
 #ifdef USE_SVM
         _tiny_param.set (_opt.learner_argc, _opt.learner_argv);
         if (_tiny_param.kernel_type != TinySVM::POLY || _tiny_param.degree > 4)
-          errx (1, HERE "only polynomial kernel [-t 1] of [-d] <= 4 is supported in SVM.");
+          my_errx (1, "%s", "only polynomial kernel [-t 1] of [-d] <= 4 is supported in SVM.");
 #endif
         break;
       case MAXENT:
@@ -940,7 +940,7 @@ namespace pdep {
     } else {
       FILE* fp = std::fopen (model.c_str (), "r");
       if (! fp || std::feof (fp))
-        errx (1, HERE "no model found: %s; train a model first [-t 0]",
+        my_errx (1, "no model found: %s; train a model first [-t 0]",
               model.c_str ());
       switch (std::fgetc (fp)) {
         case  0 :
@@ -949,11 +949,11 @@ namespace pdep {
         case 'T': _opt.learner = SVM;    break;
         case '-':
         case '+': _opt.learner = MAXENT; break;
-        default:  errx (1, HERE "unknown model found");
+        default:  my_errx (1, "%s", "unknown model found");
       }
 #ifndef USE_OPAL
       if (_opt.learner == OPAL)
-        errx (1, HERE "unsupported model found; configure with --enable-opal in compiling J.DepP");
+        my_errx (1, "%s", "unsupported model found; configure with --enable-opal in compiling J.DepP");
 #endif
       std::fclose (fp);
     }
@@ -967,7 +967,8 @@ namespace pdep {
     } else {
       const std::string train (model + ".train");
       const std::string event (model + ".event");
-      _pecco_opt.set (argc, argv);
+      // TODO
+      //_pecco_opt.set (argc, argv);
       _pecco_opt.model = model.c_str ();
       _pecco_opt.train = train.c_str ();
       _pecco_opt.event = event.c_str ();
@@ -1028,9 +1029,9 @@ namespace pdep {
 #endif
     if (_opt.input == RAW && _opt.mode != PARSE)
 #ifdef USE_AS_STANDALONE
-      errx (1, HERE "You can input RAW sentences [-I 0] only for parsing [-t 1].");
+      my_errx (1, "%s", "You can input RAW sentences [-I 0] only for parsing [-t 1].");
 #else
-    errx (1, HERE "You can input POS-tagged sentences [-I 0] only for parsing [-t 1].");
+    my_errx (1, "%s", "You can input POS-tagged sentences [-I 0] only for parsing [-t 1].");
 #endif
 
     TIMER (_dict_t->startTimer ());
@@ -1051,7 +1052,7 @@ namespace pdep {
         _setup_classifier (DEPND, _opt.depnd_argc, _opt.depnd_argv);
       if (_opt.mode == CACHE) {
         if (_opt.learner == OPAL)
-          errx (1, HERE "needless to cache in opal classifier [-t 0].");
+          my_errx (1, "%s", "needless to cache in opal classifier [-t 0].");
         _batch <CACHE> ();
       } else {
         _batch <PARSE> ();

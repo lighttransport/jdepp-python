@@ -1,12 +1,18 @@
 /// J.DepP -- Japanese Dependency Parsers
 //  $Id: pdep.h 1943 2022-03-17 17:48:45Z ynaga $
 // Copyright (c) 2008-2015 Naoki Yoshinaga <ynaga@tkl.iis.u-tokyo.ac.jp>
+//
+// Modification by Light Transport Entertainment Inc.
+//
 #ifndef PDEP_H
 #define PDEP_H
 
+#ifdef _WIN32
+#else
 #include <unistd.h>
+//#include <err.h>
+#endif
 #include <fcntl.h>
-#include <err.h>
 #include <cstdio>
 #include <cstdarg>
 #include <cmath>
@@ -39,6 +45,9 @@
 #define FEATURE_SEP ','
 #endif
 
+#ifndef IOBUF_SIZE
+#define IOBUF_SIZE 262144
+#endif
 
 #ifndef JDEPP_DEFAULT_MODEL
 #define JDEPP_DEFAULT_MODEL ""
@@ -50,6 +59,7 @@
 #include "typedef.h"
 // trie type
 #if defined (USE_DARTS) || defined (USE_DARTS_CLONE)
+#error not supported codepath
 #include <darts.h>
 #endif
 #ifdef USE_CEDAR
@@ -68,12 +78,14 @@
 #include "pa.h"
 #endif
 #ifdef USE_MAXENT
+#error not supported
 #include "maxent.h"
 #include "linear.h"
 #endif
 #include "pecco.h"
 #ifdef USE_AS_STANDALONE
-#include <mecab.h>
+// TODO: Use jagger
+//#include <mecab.h>
 #endif
 
 #define JDEPP_COPYRIGHT  "J.DepP - Japanese Dependency Parser\n\
@@ -165,6 +177,7 @@ test    test file\n\
   -c, --reg-cost=INT          cost of regularization\n\
 \n"
 
+#if 0
 #ifdef USE_AS_STANDALONE
 static const  char* jdepp_short_options = "t:e:i:c:m:p:I:b:l:n:d:x:v:h";
 #else
@@ -203,6 +216,7 @@ static struct option maxent_long_options[] = {
 
 extern char* optarg;
 extern int   optind;
+#endif
 
 // raw strings for utf8
 #define UTF8_COMMA         "\xE8\xAA\xAD\xE7\x82\xB9" // 読点
@@ -307,6 +321,8 @@ namespace pdep {
     char*        ignore;
     int          ignore_len;
     bool         utf8;
+
+#if 0
     //
     option (int argc, char** argv) :
       com (argv[0]), train ("train.JDP"),
@@ -363,7 +379,7 @@ namespace pdep {
           default:  printCredit (); std::exit (0);
         }
         if (err && *err)
-          errx (1, HERE "unrecognized option value: %s", optarg);
+          my_errx (1, "unrecognized option value: %s", optarg);
       }
       // print xcode
       if (xcode) { // xcode
@@ -374,20 +390,20 @@ namespace pdep {
       }
       // errors & warnings
       if (learner != OPAL && learner != SVM && learner != MAXENT)
-        errx (1, HERE "unknown learner [-l].");
+        my_errx (1, "unknown learner [-l].");
       if (mode != LEARN && mode != PARSE && mode != BOTH && mode != CACHE)
-        errx (1, HERE "unknown running mode [-t].");
+        my_errx (1, "unknown running mode [-t].");
       if (parser != LINEAR && parser != CHUNKING && parser != BACKWARD &&
           parser != TOURNAMENT)
-        errx (1, HERE "unknown parsing algorithm [-p].");
+        my_errx (1, "unknown parsing algorithm [-p].");
       if (input != RAW && input != CHUNK && input != DEPND)
-        errx (1, HERE "unknown input format [-I].");
+        my_errx (1, "unknown input format [-I].");
       struct stat st;
       if (stat (model_dir, &st) != 0)
-        errx (1, HERE "no such directory: %s [-m]", model_dir);
+        my_errx (1, "no such directory: %s [-m]", model_dir);
 #ifdef USE_AS_STANDALONE
       if (input == RAW && mecab_dic && stat (mecab_dic, &st) != 0)
-        errx (1, HERE "MeCab dict [-d]: no such file or directory: %s", mecab_dic);
+        my_errx (1, "MeCab dict [-d]: no such file or directory: %s", mecab_dic);
 #endif
       if (input == CHUNK && parser != LINEAR)
         warnx ("NOTE: parsing algorithm [-p] is ignored in training a chunker.");
@@ -401,7 +417,9 @@ namespace pdep {
     }
     void printCredit () { std::fprintf (stderr, JDEPP_COPYRIGHT, com); }
     void printHelp   () { std::fprintf (stderr, JDEPP_OPT0 JDEPP_OPT1 JDEPP_OPT_TRAIN JDEPP_OPT_TEST JDEPP_OPT_MISC); }
+#endif
   private:
+#if 0
     void _set_library_options (int& i, const int argc, char** argv,
                                int& largc, char**& largv) {
       if (i < argc) {
@@ -413,12 +431,14 @@ namespace pdep {
           i += largc;
         } else {
           printCredit ();
-          errx (1, HERE "Type `%s --help' for option details.", com);
+          my_errx (1, "Type `%s --help' for option details.", com);
         }
       }
     }
+#endif
   };
 #ifdef USE_MAXENT
+#error "not supported"
   enum maxent_algo_t { SGD, OWLQN, LBFGS }; // MaxEnt optimizer
   // wrapper option class for maxent
   struct maxent_option { // option handler
@@ -445,13 +465,13 @@ namespace pdep {
           default:  std::exit (0);
         }
         if (err && *err)
-          errx (1, HERE "unrecognized option value: %s", optarg);
+          my_errx (1, "unrecognized option value: %s", optarg);
       }
       // errors
       if (algo != SGD && algo != OWLQN && algo != LBFGS)
-        errx (1, HERE "unknown optimization algorithm [-l]");
+        my_errx (1, "unknown optimization algorithm [-l]");
       if (degree == 0 || degree >= 4)
-        errx (1, HERE "degree of conjunctive features [-d] must be <= 3");
+        my_errx (1, "degree of conjunctive features [-d] must be <= 3");
 
     }
     void printHelp () { std::fprintf (stderr, MAXENT_OPT); }
@@ -470,14 +490,15 @@ namespace pdep {
       FILE* fp = std::fopen (fn, "rb");
       if (std::fread (&_num_particle_features, sizeof (ny::uint), 1, fp) != 1 ||
           std::fread (&_num_lexical_features,  sizeof (ny::uint), 1, fp) != 1)
-        errx (1, HERE "broken dic: delete %s", fn);
+        my_errx (1, "broken dic: delete %s", fn);
       ++_num_lexical_features; // reserve room for unseen feature
       long offset = std::ftell (fp);
       std::fseek (fp, 0, SEEK_END);
       const size_t size = static_cast <size_t> (std::ftell (fp) - offset);
       _data_ptr = new char[size];
       std::fseek (fp, offset, SEEK_SET);
-      std::fread (_data_ptr, sizeof (char), size, fp);
+      size_t nread = std::fread (_data_ptr, sizeof (char), size, fp);
+      (void)nread;
       _data.set_array (_data_ptr, size / _data.unit_size ());
       std::fclose (fp);
     }
@@ -580,7 +601,7 @@ namespace pdep {
 #ifdef USE_JUMAN_POS
       if (i < NUM_FIELD) {
         std::fwrite (surface, sizeof (char), length, stderr);
-        errx (1, HERE "# fields, %d, is less than %d.", i, NUM_FIELD);
+        my_errx (1, "# fields, %d, is less than %d.", i, NUM_FIELD);
       }
 #endif
     }
@@ -645,7 +666,7 @@ namespace pdep {
       set (s, i, mzero);
       const char* p_end (p + len);
       if (id != strton <int> (p + 2, &p))
-        errx (1, HERE "wrong chunk id annotation.");
+        my_errx (1, "%s", "wrong chunk id annotation.");
       ++p;
       head_id   = strton <int> (p, &p);
       depnd_type_gold = *p;
@@ -658,7 +679,7 @@ namespace pdep {
     void set (const sentence_t* s, const int i, const int mzero, char* p, const size_t = 0, bool flag = false) { // ex. '* 1 7D'
       set (s, i, mzero);
       if (id != strton <int> (p + 2, &p))
-        errx (1, HERE "wrong chunk id annotation.");
+        my_errx (1, "%s", "wrong chunk id annotation.");
       ++p;
       if (flag)
         head_id      = strton <int> (p, &p);
@@ -692,14 +713,14 @@ namespace pdep {
   private:
     int            _cavail;
     int            _tavail;
-    chunk_t*       _chunks;
-    token_t*       _tokens;
+    chunk_t*       _chunks{nullptr};
+    token_t*       _tokens{nullptr};
     mutable char   _pos[IOBUF_SIZE]; // save input (postagged/parsed)
     mutable char   _res[IOBUF_SIZE]; // save output
     mutable char*  _ptr;             // current position in result buffer
   public:
-    chunk_t*       chunk0;
-    token_t*       token0;
+    chunk_t*       chunk0{nullptr};
+    token_t*       token0{nullptr};
     int            chunk_num;
     int            token_num;
     sentence_t () :
@@ -727,7 +748,7 @@ namespace pdep {
     void setHeader (char* cs, const size_t len) {
       if (_ptr == &_res[0]) {
         if (len > IOBUF_SIZE)
-          errx (1, HERE "set a larger value to IOBUF_SIZE.");
+          my_errx (1, "set a larger value to IOBUF_SIZE. current = %d", int(IOBUF_SIZE));
         std::memcpy (_ptr, cs, len), _ptr += len;
       }
     }
@@ -781,12 +802,12 @@ namespace pdep {
       const int n = std::vsnprintf (ptr, size, format, args);
       va_end (args);
       if (n == -1 || n >= static_cast <int> (size))
-        errx (1, HERE "set a larger value to IOBUF_SIZE.");
+        my_errx (1, "set a larger value to IOBUF_SIZE. current = %d", int(IOBUF_SIZE));
       return n;
     }
     void set_topos (const char* postagged, const size_t len) {
       if (len > IOBUF_SIZE)
-        errx (1, HERE "set a larger value to IOBUF_SIZE.");
+        my_errx (1, "set a larger value to IOBUF_SIZE. current = %d", int(IOBUF_SIZE));
       std::memcpy (&_pos[0], postagged, len);
     };
     const char* print_tostr (const input_t in, bool prob) const {
@@ -829,7 +850,7 @@ namespace pdep {
           }
           for (const token_t* m = b.mzero (); m <= b.mlast (); ++m) {
             if (_ptr - &_res[0] + m->length > IOBUF_SIZE)
-              errx (1, HERE "set a larger value to IOBUF_SIZE.");
+              my_errx (1, "set a larger value to IOBUF_SIZE. current = %d", int(IOBUF_SIZE));
             std::memcpy (_ptr, m->surface, m->length); _ptr += m->length;
             switch (in) {
               case RAW:
@@ -851,7 +872,7 @@ namespace pdep {
           }
         }
       if (_ptr - &_res[0] + 5 > IOBUF_SIZE) // EOS\n\0
-        errx (1, HERE "set a larger value to IOBUF_SIZE.");
+        my_errx (1, "set a larger value to IOBUF_SIZE. current = %d", int(IOBUF_SIZE));
       std::memcpy (_ptr, "EOS\n", 4); _ptr += 4;
       *_ptr = '\0';
       return &_res[0];

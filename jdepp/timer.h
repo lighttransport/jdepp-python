@@ -4,8 +4,8 @@
 #ifndef TIMER_H
 #define TIMER_H
 
-#include <sys/time.h>
-#include <sys/resource.h>
+//#include <sys/time.h>
+//#include <sys/resource.h>
 #include <stdint.h>
 #include <cstdio>
 #include <cstdlib>

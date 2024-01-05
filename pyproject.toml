@@ -1,0 +1,19 @@
+[build-system]
+requires = [
+    "setuptools>=42",
+    "wheel",
+    "pybind11>=2.10.0",
+]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 140
+
+[project]
+name = "jdepp"
+version = "0.1.0"
+readme = {file = "README.md", content-type = "text/markdown"}
+
+
+[project.scripts]
+jdepp = "jdepp:main"

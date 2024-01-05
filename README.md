@@ -12,3 +12,4 @@ Licensed under 3-clause BSD license.
 ## Thrird party license
 
 * paco, cedar: GPLv2/LGPLv2.1/BSD triple license. We choose BSD license.
+* io-util: MIT license.

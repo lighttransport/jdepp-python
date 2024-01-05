@@ -1,12 +1,15 @@
 // pecco -- please enjoy classification with conjunctive features
 //  $Id: classify.h 1875 2015-01-29 11:47:47Z ynaga $
 // Copyright (c) 2008-2015 Naoki Yoshinaga <ynaga@tkl.iis.u-tokyo.ac.jp>
+//
+// Modification by Light Tansport Entertainment Inc.
+//
 #ifndef CLASSIFY_H
 #define CLASSIFY_H
 
-#include <sys/stat.h>
-#include <getopt.h>
-#include <err.h>
+//#include <sys/stat.h>
+//#include <getopt.h>
+//#include <err.h>
 #include <cmath>
 #include <cassert>
 #include <climits>
@@ -19,6 +22,14 @@
 #include <numeric>
 #include "typedef.h"
 #include "timer.h"
+
+#ifndef DEFAULT_CLASSIFIER
+#define DEFAULT_CLASSIFIER FST
+#endif
+
+#ifndef TRIE_SUFFIX
+#define TRIE_SUFFIX "cda"
+#endif
 
 #define PECCO_COPYRIGHT  "pecco - please enjoy classification w/ conjunctive features\n\
 Copyright (c) 2008-2015 Naoki Yoshinaga, All rights reserved.\n\
@@ -79,6 +90,7 @@ test    test file              test examples; read STDIN if omitted\n\
   -v, --verbose=INT            verbosity level (0)\n\
   -h, --help                   show this help and exit\n"
 
+#if 0
 static const  char* pecco_short_options = "t:e:p:f:i:bcO:o:m:s:r:v:h";
 static struct option pecco_long_options[] = {
   {"classifier type",   required_argument, NULL, 't'},
@@ -100,8 +112,17 @@ static struct option pecco_long_options[] = {
 
 extern char* optarg;
 extern int    optind;
+#endif
 
 namespace pecco {
+
+namespace {
+
+
+
+} // namespace
+
+
   enum model_t  { KERNEL, LINEAR };
 #ifdef USE_CEDAR
   enum algo_t   { PKI, PKE, FST, PMT };
@@ -130,6 +151,7 @@ namespace pecco {
     size_t       pmsize;
     option () : com ("--"), train (0), test (0), model (0), event (""), minsup ("1"), sigma ("0"), fratio ("0"), type (KERNEL), algo (DEFAULT_CLASSIFIER),
                 output (0), fst_factor (0), fst_verbose (false), force (false), verbose (0), pmsize (20)  {}
+#if 0
     option (int argc, char ** argv) : com (argc ? argv[0] : "--"), train (0), test (0), model (""), event (""), minsup ("1"), sigma ("0"), fratio ("0"), type (KERNEL), algo (DEFAULT_CLASSIFIER), output (NONE),  fst_factor (0), fst_verbose (false), force (false), verbose (0), pmsize (20) {
       set (argc, argv);
     }
@@ -214,10 +236,11 @@ namespace pecco {
         errx (1, HERE "FST [-t 2] requires possible examples [-f];\n (you can use the training examples)");
       if (++optind != argc) test = argv[optind];
     }
+#endif
     void setType () {
       FILE* fp = std::fopen (model, "r");
       if (! fp || std::feof (fp))
-        errx (1, HERE "no model found: %s; train a model first", model);
+        my_errx (1, HERE "no model found: %s; train a model first", model);
       switch (std::fgetc (fp)) {
         case 'o': // opal;      delegate
         case 's': // LIBSVM;    delegate
@@ -429,7 +452,7 @@ namespace pecco {
     if (flag) std::fprintf (stderr, " building %s..", name.c_str ());
     if (da->build (str.size (), &str[0], &len[0], &val[0]) != 0 ||
         da->save  (fn.c_str (), mode) != 0 ) {
-      errx (1, HERE "failed to build %s trie.", name.c_str ());
+      my_errx (1, HERE "failed to build %s trie.", name.c_str ());
     }
     if (flag) std::fprintf (stderr, "done.\n");
   }
@@ -701,7 +724,7 @@ namespace pecco {
         case 2: _derived ()->template estimate_bound <2, FLAG> (first, beg, it); break;
         case 3: _derived ()->template estimate_bound <3, FLAG> (first, beg, it); break;
         case 4: _derived ()->template estimate_bound <4, FLAG> (first, beg, it); break;
-        default: errx (1, HERE "_d = %d does not supported in pruning", _d);
+        default: my_errx (1, HERE "_d = %d does not supported in pruning", _d);
       }
     }
     template <bool PRUNE, binary_t FLAG>

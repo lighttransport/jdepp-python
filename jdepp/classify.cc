@@ -1,6 +1,9 @@
 // pecco -- please enjoy classification with conjunctive features
 //  $Id: classify.cc 1875 2015-01-29 11:47:47Z ynaga $
 // Copyright (c) 2008-2015 Naoki Yoshinaga <ynaga@tkl.iis.u-tokyo.ac.jp>
+//
+// Modification by Light Transport Entertainment Inc.
+//
 #include "classify.h"
 #ifdef USE_SSE4_2_POPCNT
 #include <smmintrin.h>
@@ -22,7 +25,7 @@ namespace pecco {
     if (std::numeric_limits <T>::is_specialized &&
         (ret  < static_cast <int64_t>  (std::numeric_limits <T>::min ()) ||
          retu > static_cast <uint64_t> (std::numeric_limits <T>::max ())))
-      errx (1, HERE "overflow: %s", s);
+      my_errx (1, "overflow: %s", s);
     return static_cast <T> (ret);
   }
   template <> double strton <double> (const char* s, char** error)
@@ -37,7 +40,7 @@ namespace pecco {
     for (; *p >= '0' && *p <= '9'; ++p) {
       ret *= 10, ret += *p - '0';
       if (ret > std::numeric_limits <ny::uint>::max ())
-        errx (1, HERE "overflow: %s", s);
+        my_errx (1, "overflow: %s", s);
     }
     if (error) *error = p;
     return static_cast <ny::uint> (ret);
@@ -50,7 +53,7 @@ namespace pecco {
   template <typename T> T strton (const char* s) {
     char* err;
     const T n = strton <T> (s, &err);
-    if (*err != '\0') errx (1, HERE "invalid conversion: %s", s);
+    if (*err != '\0') my_errx (1, "invalid conversion: %s", s);
     return n;
   }
   template int      strton (const char*);
@@ -105,7 +108,7 @@ namespace pecco {
       case 3: return ((n*n*n - n) - (m*m*m - m)) / 6;
       case 4: return ((n*n*n*n - 2*n*n*n + 11*n*n - 10*n)
                       -(m*m*m*m - 2*m*m*m + 11*m*m - 10*m)) / 24;
-      default: errx (1, HERE "please add case statement."); return 0; // dummy;
+      default: my_errx (1, "%s", "please add case statement."); return 0; // dummy;
     }
   }
   // assign younger feature indices to important feature numbers
@@ -115,8 +118,9 @@ namespace pecco {
       std::fprintf (stderr, "packing feature id..");
     // reorder features according to their frequency in training data
     if (_opt.train) {
+#if 0
       FILE* reader =  std::fopen (_opt.train, "r");
-      if (! reader) errx (1, HERE "no such file: %s", _opt.train);
+      if (! reader) my_errx (1, "no such file: %s", _opt.train);
       _nt         = 0;
       char*  line = 0;
       size_t read = 0;
@@ -139,6 +143,9 @@ namespace pecco {
         }
       }
       std::fclose (reader);
+#else
+      my_errx(1, "%s", "Training is not supported in this build.");
+#endif
     } else {
       // reorder features according to their frequency in support vectors / conjunctive features
       for (std::vector <ny::fv_t>::const_iterator it = fvv.begin ();
@@ -199,7 +206,7 @@ namespace pecco {
         _fstrie.open (fstrie_fn.c_str ()) == 0) {
       if (! abuse) { // load the pre-computed weights
         FILE* reader = std::fopen (fsw_fn.c_str (), "rb");
-        if (! reader) errx (1, HERE "no such file: %s", fsw_fn.c_str ());
+        if (! reader) my_errx (1, "no such file: %s", fsw_fn.c_str ());
         if (std::fseek (reader, 0, SEEK_END) != 0) return -1;
         const size_t nfs = static_cast <size_t> (std::ftell (reader)) / (_nl * sizeof (ny::fl_t));
         if (std::fseek (reader, 0, SEEK_SET) != 0) return -1;
@@ -210,9 +217,10 @@ namespace pecco {
       if (_opt.verbose > 0) std::fprintf (stderr, "done.\n");
     } else {
       if (_opt.verbose > 0) std::fprintf (stderr, "not found.\n");
+#if 0
       FILE* reader = std::fopen (_opt.event, "r");
       if (! reader)
-        errx (1, HERE "no such event file: %s", _opt.event);
+        my_errx (1, "no such event file: %s", _opt.event);
       if (_opt.verbose > 0)
         std::fprintf (stderr, "building fstrie from %s..", _opt.event);
       unsigned long nt (0), nkey (0);
@@ -364,7 +372,7 @@ namespace pecco {
       }
       // try reload
       if (_fstrie.open (fstrie_fn.c_str ()) != 0)
-        errx (1, HERE "no such double array: %s", fstrie_fn.c_str ());
+        my_errx (1, "no such double array: %s", fstrie_fn.c_str ());
       if (! abuse) {
         delete [] _fsw;
         // load computed score
@@ -381,6 +389,9 @@ namespace pecco {
            it != fst_key.end (); ++it)
         delete *it;
       if (_opt.verbose > 0) std::fprintf (stderr, "done.\n");
+#else
+      my_errx(1, "%s", "On-the-fly building of fstrie is not supported in this build.");
+#endif
     }
     return true;
   }
@@ -471,7 +482,7 @@ namespace pecco {
       case 4:
         return _pkePseudoInnerLoop <4, PRUNE, FLAG> (score, it, beg, pend, 0) ||
           _pkeInnerLoop <4, PRUNE, FLAG> (score, pend, beg, end, 0);
-      default: errx (1, HERE "please add case statement.");
+      default: my_errx (1, "please add case statement.");
     }
   }
 #else
@@ -484,7 +495,7 @@ namespace pecco {
       case 2: return _pkeInnerLoop <2, PRUNE, FLAG> (score, it, beg, end, 0);
       case 3: return _pkeInnerLoop <3, PRUNE, FLAG> (score, it, beg, end, 0);
       case 4: return _pkeInnerLoop <4, PRUNE, FLAG> (score, it, beg, end, 0);
-      default: errx (1, HERE "please add case statement.");
+      default: my_errx (1, "%s", "please add case statement.");
     }
   }
 #endif
@@ -599,7 +610,7 @@ namespace pecco {
     _fv.clear ();
     while (*q) {
       const ny::uint fi = strton <ny::uint> (q, &q);
-      if (*q != ':') errx (1, HERE "illegal feature index: %s", p);
+      if (*q != ':') my_errx (1, "illegal feature index: %s", p);
       _fv.push_back (fi);
       ++q; while (*q && ! isspace (*q)) ++q;
       while (isspace (*q)) ++q; // skip (trailing) spaces
@@ -609,10 +620,11 @@ namespace pecco {
   template <typename T>
   void ClassifierBase <T>::batch () { // batch classification
     if (_opt.verbose > 0) std::fprintf (stderr, "processing examples..");
+#if 0
     const bool     output_example = _opt.output & 0x100;
     const output_t output         = static_cast <output_t> (_opt.output & 0xff);
     FILE* reader = _opt.test ? std::fopen (_opt.test, "r") : stdin;
-    if (! reader) errx (1, HERE "no such file: %s", _opt.test);
+    if (! reader) my_errx (1, "no such file: %s", _opt.test);
     if (reader == stdin)
       std::fprintf (stderr, "(input: STDIN)\n");
     char*  line = 0;
@@ -675,6 +687,9 @@ namespace pecco {
     std::fprintf (stderr, "acc. %.4f (pp %u) (pn %u) (np %u) (nn %u)\n",
                   (pp + nn) * 1.0 / (pp + pn + np + nn), pp, pn, np, nn);
     printStat ();
+#else
+    my_errx(1, "%s", "Batch processing of classify is not supported yet.");
+#endif
   }
   template <typename T>
   void ClassifierBase <T>::printStat () { // print classifier statistics

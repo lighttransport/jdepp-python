@@ -4,8 +4,8 @@
 #ifndef LLM_CLASSIFY_H
 #define LLM_CLASSIFY_H
 
-#include <sys/stat.h>
-#include <err.h>
+//#include <sys/stat.h>
+//#include <err.h>
 #include <cmath>
 #include <cassert>
 #include <string>
@@ -93,7 +93,7 @@ public:
 #ifdef USE_CEDAR
         case PMT: _pmtClassify <PRUNE, FLAG> (fv, score); break;
 #endif
-        case PKI: errx (1, HERE "PKI [-t 0] is not supported.");
+        case PKI: my_errx (1, "%s", "PKI [-t 0] is not supported.");
       }
 //      _elapsed = ny::Timer::rdtsc () - start;
       TIMER (_classify_t->stopTimer ());
@@ -125,7 +125,7 @@ public:
       if (target) {
         lmap::const_iterator it = _l2li.find (target);
         if (it == _l2li.end ())
-          errx (1, HERE "unknown label: %s", target);
+          my_errx (1, "unknown label: %s", target);
         target_id = it->second;
       }
       if (is_binary_classification ())

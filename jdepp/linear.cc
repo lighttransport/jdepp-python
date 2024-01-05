@@ -31,23 +31,25 @@ namespace pecco {
       // read feature weight trie
       _ftrie.open (ftrie_fn.c_str ()); // may fail
       FILE* reader = std::fopen (fs_fn.c_str (), "rb");
-      if (! reader) errx (1, HERE "no such file: %s", fs_fn.c_str ());
-      std::fread (&_ncf, sizeof (ny::uint), 1, reader);
+      if (! reader) my_errx (1, "no such file: %s", fs_fn.c_str ());
+      size_t nread;
+      (void)nread;
+      nread = std::fread (&_ncf, sizeof (ny::uint), 1, reader);
 #ifdef USE_PRUNING
       if (_d > 1) {
-        std::fread (&_f2nf[0],  sizeof (pn_t), (_nf + 1) * _nl,      reader);
-        std::fread (&_f2dpn[0], sizeof (pn_t), (_nf + 1) * _nl * _d, reader);
+        nread = std::fread (&_f2nf[0],  sizeof (pn_t), (_nf + 1) * _nl,      reader);
+        nread = std::fread (&_f2dpn[0], sizeof (pn_t), (_nf + 1) * _nl * _d, reader);
       }
 #endif
       std::fclose (reader);
       reader = std::fopen (fw_fn.c_str (), "rb");
-      if (! reader) errx (1, HERE "no such file: %s", fw_fn.c_str ());
+      if (! reader) my_errx (1, "no such file: %s", fw_fn.c_str ());
       if (std::fseek (reader, 0, SEEK_END) != 0) return -1;
       const size_t uniq
         = static_cast <size_t> (std::ftell (reader)) / (_nl * sizeof (ny::fl_t));
       if (std::fseek (reader, 0, SEEK_SET) != 0) return -1;
       _fw = new ny::fl_t [_nl * uniq]; // one-dimentional array is faster
-      std::fread (&_fw[0], sizeof (ny::fl_t), uniq * _nl, reader);
+      nread = std::fread (&_fw[0], sizeof (ny::fl_t), uniq * _nl, reader);
       std::fclose (reader);
       if (_opt.verbose > 0) std::fprintf (stderr, "done.\n");
     } else {
@@ -168,16 +170,18 @@ namespace pecco {
       if (_opt.verbose > 0)
         std::fprintf (stderr, "loading compiled model parameters..");
       FILE* reader = std::fopen (model_bin.c_str (), "rb");
-      std::fread (&_d,     sizeof (ny::uint), 1, reader);
-      std::fread (&_nl,    sizeof (ny::uint), 1, reader);
-      std::fread (&_nf,    sizeof (ny::uint), 1, reader);
-      std::fread (&_nfbit, sizeof (ny::uint), 1, reader);
+      size_t nread;
+      (void)nread;
+      nread = std::fread (&_d,     sizeof (ny::uint), 1, reader);
+      nread = std::fread (&_nl,    sizeof (ny::uint), 1, reader);
+      nread = std::fread (&_nf,    sizeof (ny::uint), 1, reader);
+      nread = std::fread (&_nfbit, sizeof (ny::uint), 1, reader);
       // label map
       for (ny::uint li = 0; li < _nl; ++li) {
         ny::uint len = 0;
-        std::fread (&len, sizeof (ny::uint), 1, reader);
+        nread = std::fread (&len, sizeof (ny::uint), 1, reader);
         char* p = new char[len + 1];
-        std::fread (p, sizeof (char), len, reader);
+        nread = std::fread (p, sizeof (char), len, reader);
         p[len] = '\0';
         _li2l.push_back (p);
         _l2li.insert (lmap::value_type (p, li));
@@ -194,9 +198,10 @@ namespace pecco {
       std::fclose (reader);
       if (_opt.verbose > 0) std::fprintf (stderr, "done.\n");
     } else {
-      FILE *reader = std::fopen (model, "r");
       if (_opt.verbose > 0)
         std::fprintf (stderr, "loading/compiling model parameters..");
+#if 0
+      FILE *reader = std::fopen (model, "r");
       if (! reader)
         errx (1, HERE "no such file: %s", model);
       std::map <ny::fv_t, ny::uint> fc2fci; // conjunctive features
@@ -239,7 +244,7 @@ namespace pecco {
       for (ny::uint i = 0; i < _ncf; ++i)
         _fw_tmp[i].resize (_nl, 0);
       if (_opt.verbose > 0) std::fprintf (stderr, "done.\n");
-    
+
       // construct dense feature;
       _nf = static_cast <ny::uint> (_fncnt.size ());
       // set _nfbit for radix sort
@@ -261,13 +266,17 @@ namespace pecco {
         std::fwrite (&_fi2fn[fi], sizeof (ny::uint), 1, writer);
       std::fclose (writer);
       _fncnt.clear ();
+#else
+      fprintf(stderr, "On-the-fly compiling of linear model is not supported yet in this build.");
+      exit(-1);
+#endif
     }
 #ifdef USE_CEDAR
     if (_d == 1 && (_opt.algo == FST || _opt.algo == PMT))
-        warnx ("NOTE: [-t 2 or 3] is useless in d = 1.");
+        my_warnx ("%s", "NOTE: [-t 2 or 3] is useless in d = 1.");
 #else
     if (_d == 1 && _opt.algo == FST)
-        warnx ("NOTE: [-t 2] is useless in d = 1.");
+        my_warnx ("%s", "NOTE: [-t 2] is useless in d = 1.");
 #endif
     _score.resize (_nl);
     _setFtrie ();

@@ -6,6 +6,8 @@
 #include <smmintrin.h>
 #endif
 
+#define my_warnx(msg) fprintf(stdout, msg)
+
 namespace pecco {
   // static const
   static const ny::uint COMMON_FACTOR   = 2;
@@ -58,15 +60,16 @@ namespace pecco {
       std::fprintf (stderr, "Perform sigmoid fitting using examples [-e]..\n");
     // parameters
     if (!_opt.train) {
-      warnx ("WARNING: no ref examples [-e], no sigmoid fitting");
+      my_warnx ("WARNING: no ref examples [-e], no sigmoid fitting");
       return;
     }
+#if 0
     std::vector <double> f;
     std::vector <bool>   label;
     ny::uint prior1 (0), prior0 (0);
     { // training examples
       FILE*  reader =  std::fopen (_opt.train, "r");
-      if (! reader) errx (1, HERE "no such file: %s", _opt.train);
+      if (! reader) my_errx (1, "no such file: %s", _opt.train);
       char*  line = 0;
       size_t read = 0;
       for (ny::fv_t fv; ny::getLine (reader, line, read); fv.clear ()) {
@@ -175,6 +178,10 @@ namespace pecco {
       std::fprintf (stderr, "done.\n");
     }
     _sigmoid_A = A; _sigmoid_B = B;
+#else
+    std::fprintf(stderr, "kernel_model::_sigmoid_fitting () is disabled in this build.");
+    exit(1);
+#endif
   }
   void kernel_model::_setup_binary_labels () {
     _nl = 1;
@@ -194,28 +201,31 @@ namespace pecco {
         std::fprintf (stderr, "loading compiled model parameters..");
       fp = std::fopen (model_bin.c_str (), "rb");
       // model parameters
-      std::fread (&_d,      sizeof (ny::uint),   1, fp);
-      std::fread (&_nl,     sizeof (ny::uint),   1, fp);
-      std::fread (&_nf,     sizeof (ny::uint),   1, fp);
-      std::fread (&_nfbit,  sizeof (ny::uint),   1, fp);
-      std::fread (&_nsv,    sizeof (ny::uint),   1, fp);
-      std::fread (&_maf,    sizeof (ny::uint),   1, fp);
-      std::fread (&_r,      sizeof (double),     1, fp);
-      std::fread (&_s,      sizeof (double),     1, fp);
+      size_t nread;
+      // TODO: Check nread
+      nread = std::fread (&_d,      sizeof (ny::uint),   1, fp);
+      nread = std::fread (&_nl,     sizeof (ny::uint),   1, fp);
+      nread = std::fread (&_nf,     sizeof (ny::uint),   1, fp);
+      nread = std::fread (&_nfbit,  sizeof (ny::uint),   1, fp);
+      nread = std::fread (&_nsv,    sizeof (ny::uint),   1, fp);
+      nread = std::fread (&_maf,    sizeof (ny::uint),   1, fp);
+      nread = std::fread (&_r,      sizeof (double),     1, fp);
+      nread = std::fread (&_s,      sizeof (double),     1, fp);
       _b  = new double[_nl] ();
-      std::fread (_b,       sizeof (double),   _nl, fp);
+      nread = std::fread (_b,       sizeof (double),   _nl, fp);
 #ifndef USE_MODEL_SUFFIX
-      std::fread (&_minsup, sizeof (ny::uint),   1, fp);
-      std::fread (&_sigma,  sizeof (double),     1, fp);
-      std::fread (&_fratio, sizeof (double),     1, fp);
+      nread = std::fread (&_minsup, sizeof (ny::uint),   1, fp);
+      nread = std::fread (&_sigma,  sizeof (double),     1, fp);
+      nread = std::fread (&_fratio, sizeof (double),     1, fp);
 #endif
+      (void)nread;
       // label map
       if (_nl >= 2)
         for (ny::uint li = 0; li < _nl; ++li) {
           ny::uint len = 0;
-          std::fread (&len, sizeof (ny::uint), 1, fp);
+          nread = std::fread (&len, sizeof (ny::uint), 1, fp);
           char* p = new char[len + 1]; p[len] = '\0';
-          std::fread (p, sizeof (char), len, fp);
+          nread = std::fread (p, sizeof (char), len, fp);
           _li2l.push_back (p);
           _l2li.insert (lmap::value_type (p, li));
           if (strton <int> (p) == 1) _tli = li;
@@ -270,10 +280,10 @@ namespace pecco {
         for (ny::uint i = 0; i < _nsv; ++i) {
           if (std::fread (&alph_[0], sizeof (ny::fl_t), _nl, fp) != _nl ||
               std::fread (&len,      sizeof (ny::uint),   1, fp) != 1)
-            errx (1, HERE "missing SVs; try to recompile model [-c]");
+            my_errx (1, "%s", "missing SVs; try to recompile model [-c]");
           // read
           if (s.size () < len) s.resize (len);
-          std::fread (&s[0], sizeof (ny::uchar), len, fp);
+          nread = std::fread (&s[0], sizeof (ny::uchar), len, fp);
           fv.clear ();
           byte_encoder encoder;
           for (ny::uint j (0), len_ (0), prev (0); len_ < len; fv.push_back (prev))
@@ -302,6 +312,7 @@ namespace pecco {
     } else {
       if (_opt.verbose > 0)
         std::fprintf (stderr, "loading/compiling model parameters..");
+#if 0
       FILE* reader = std::fopen (model, "r");
       if (! reader)
         errx (1, HERE "no such file: %s", model);
@@ -453,21 +464,26 @@ namespace pecco {
       if (_opt.algo == PKI)
         std::vector <ny::fv_t> ().swap (_sv);
       // counter_t ().swap (_fncnt); // compilation error in gcc 4.0
+#else
+      fprintf(stderr, "On-the-fly compile of kernel is not supported yet in this build.");
+      exit(-1);
+#endif
+
     }
 #ifdef ABUSE_TRIE
     if (! is_binary_classification ())
-      errx (1, HERE "ABUSE_TRIE accepts only a binary label.");
+      my_errx (1, "%s", "ABUSE_TRIE accepts only a binary label.");
 #endif
     if (_d == 1) {
 #ifdef USE_CEDAR
       if (_opt.algo == FST || _opt.algo == PMT)
-        warnx ("NOTE: [-t 2 or 3] is useless in d = 1.");
+        my_warnx ("NOTE: [-t 2 or 3] is useless in d = 1.");
 #else
       if (_opt.algo == FST)
-        warnx ("NOTE: [-t 2] is useless in d = 1.");
+        my_warnx ("NOTE: [-t 2] is useless in d = 1.");
 #endif
       if (_f_r - 1 < _nf)
-        warnx ("NOTE: [-r > 0] is useless in d = 1.");
+        my_warnx ("NOTE: [-r > 0] is useless in d = 1.");
     }
     _fv.reserve (_maf);
     _score.resize (_nl);
@@ -514,7 +530,7 @@ namespace pecco {
       }
     }
     if (_opt.algo != PKI && (_sigma != 0.0 || _minsup != 1) && _opt.verbose > 0) {
-      warnx ("NOTE: approximated computation;");
+      my_warnx ("NOTE: approximated computation;");
       std::fprintf (stderr, " %d/%d features used, sigma=%g, minsup=%u\n",
                     _nf_cut, _nf, _sigma, _minsup); // _f_r - 1
     }
@@ -535,8 +551,10 @@ namespace pecco {
 #endif
       fp = std::fopen (ss.str ().c_str (), "rb");
       if (!_opt.force && fp) {
-        std::fread (&_sigmoid_A, sizeof (double), 1, fp);
-        std::fread (&_sigmoid_B, sizeof (double), 1, fp);
+        size_t nread;
+        nread = std::fread (&_sigmoid_A, sizeof (double), 1, fp);
+        nread = std::fread (&_sigmoid_B, sizeof (double), 1, fp);
+        (void)nread;
       } else {
         if (std::fpclassify (_sigmoid_A + 1.0) == FP_ZERO &&
             std::fpclassify (_sigmoid_B)       == FP_ZERO)
@@ -573,7 +591,7 @@ namespace pecco {
         _coeff[2] = 14*_s*_s*_s*_s + 24*_r*_s*_s*_s  + 12*_r*_r*_s*_s;
         _coeff[3] = 36*_s*_s*_s*_s + 24*_r*_s*_s*_s;
         _coeff[4] = 24*_s*_s*_s*_s; break;
-      default: errx (1, HERE "please add case statement.");
+      default: my_errx (1, "%s", "please add case statement.");
     }
     _max_coeff = *std::max_element (&_coeff[0], &_coeff[_d+1]);
   }
@@ -709,11 +727,13 @@ namespace pecco {
       _ftrie.open (ftrie_fn.c_str ()); // may fail
       // fstat
       FILE* reader = std::fopen (fs_fn.c_str (), "rb");
-      if (! reader) errx (1, HERE "no such file: %s", fs_fn.c_str ());
-      std::fread (_m0,       sizeof (double),   _nl, reader);
-      std::fread (&_ncf,     sizeof (ny::uint),   1, reader);
-      std::fread (&_nf_cut,  sizeof (ny::uint),   1, reader);
-      std::fread (&_f2nf[0], sizeof (pn_t),     _f_r * _nl, reader);
+      if (! reader) my_errx (1, "no such file: %s", fs_fn.c_str ());
+      size_t nread;
+      nread = std::fread (_m0,       sizeof (double),   _nl, reader);
+      nread = std::fread (&_ncf,     sizeof (ny::uint),   1, reader);
+      nread = std::fread (&_nf_cut,  sizeof (ny::uint),   1, reader);
+      nread = std::fread (&_f2nf[0], sizeof (pn_t),     _f_r * _nl, reader);
+      (void)nread;
 #ifdef USE_PRUNING
       if (_d > 1) {
         std::fread (&_f2dpn[0], sizeof (pn_t), _f_r * _nl * _d, reader);
@@ -733,13 +753,15 @@ namespace pecco {
 #endif
       //
       reader = std::fopen (fw_fn.c_str (), "rb");
-      if (! reader) errx (1, HERE "no such file: %s", fw_fn.c_str ());
+      if (! reader) my_errx (1, "no such file: %s", fw_fn.c_str ());
       if (std::fseek (reader, 0, SEEK_END) != 0) return -1;
       const size_t uniq
         = static_cast <size_t> (std::ftell (reader)) / (_nl * sizeof (ny::fl_t));
       if (std::fseek (reader, 0, SEEK_SET) != 0) return -1;
       _fw = new ny::fl_t [uniq * _nl];
-      std::fread (&_fw[0], sizeof (ny::fl_t), uniq * _nl, reader);
+
+      nread = std::fread (&_fw[0], sizeof (ny::fl_t), uniq * _nl, reader);
+
       std::fclose (reader);
       if (_opt.verbose > 0) std::fprintf (stderr, "done.\n");
     } else {
@@ -878,7 +900,7 @@ namespace pecco {
     }
     return true;
   }
-  
+
   template <binary_t FLAG>
   void kernel_model::_pkiClassify (const ny::fv_t& fv, double* score) {
     for (ny::fv_it it = fv.begin (); it != fv.end (); ++it) {
