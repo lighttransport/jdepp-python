@@ -1,0 +1,1 @@
+#define DEFAULT_CLASSIFIER FST

@@ -124,7 +124,10 @@ namespace pecco {
         if (*line != '\0') {
           // assume primitive feature vectors
           char* p (line), *p_end (line + read - 1);
-          while (p != p_end && ! isspace (*p)) ++p; ++p;
+          while (p != p_end && ! isspace (*p)) {
+            ++p;
+          }
+          ++p;
           while (p != p_end) {
             const ny::uint fn = strton <ny::uint> (p, &p);
             counter_t::iterator it = _fncnt.find (fn);
@@ -223,7 +226,11 @@ namespace pecco {
         if (*line != '\0') {
           // skip label
           char* p (line), *p_end (line + read - 1);
-          while (p != p_end && ! isspace (*p)) ++p; ++p; // skip label & space
+          // skip label & space
+          while (p != p_end && ! isspace (*p)) {
+            ++p;
+          }
+          ++p;
           _convertFv2Fv (p, fv);
           _sortFv (fv);
           // precompute score
@@ -414,7 +421,7 @@ namespace pecco {
   inline bool ClassifierBase <linear_model>::_pkePseudoInnerLoop <0, false, MULTI>  (double*, ny::fv_it, const ny::fv_it&, const ny::fv_it&, const ny::uint) { return false; }
 #endif
 #endif
-  
+
   template <typename T>
   template <int D, bool PRUNE, binary_t FLAG>
   inline bool ClassifierBase <T>::_pkeInnerLoop (double* score, ny::fv_it it, const ny::fv_it& beg, const ny::fv_it& end, const size_t pos) {

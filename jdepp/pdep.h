@@ -21,6 +21,25 @@
 #include "config.h"
 #endif
 
+#ifndef SURFACE_END
+#define SURFACE_END '\t'
+#endif
+
+// default to juman POS tagger & MeCab as morpological analyzer
+#ifndef USE_JUMAN_POS
+#define USE_JUMAN_POS
+#endif
+
+#ifndef USE_MECAB
+#define USE_MECAB
+#endif
+
+#ifndef FEATURE_SEP
+// mecab
+#define FEATURE_SEP ','
+#endif
+
+
 #ifndef JDEPP_DEFAULT_MODEL
 #define JDEPP_DEFAULT_MODEL ""
 #endif
@@ -231,7 +250,7 @@ namespace pdep {
   // field (POS tagger outputs)
 #if   defined (USE_JUMAN_POS)
 #if   defined (USE_MECAB)
-  enum field_t {SURF, POS1, POS2, TYPE, INFL, FIN, YOMI, NUM_FIELD}; // OTHER, C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16, C17, C18, NUM_FIELD}; // 
+  enum field_t {SURF, POS1, POS2, TYPE, INFL, FIN, YOMI, NUM_FIELD}; // OTHER, C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16, C17, C18, NUM_FIELD}; //
 #elif defined (USE_JUMAN)
   enum field_t {SURF, YOMI, FIN, POS1, POS_ID1, POS2, POS_ID2, TYPE, TYPE_ID, INFL, INFL_ID, NUM_FIELD};
 #elif defined (USE_CONDARA)
@@ -859,7 +878,7 @@ namespace pdep {
   inline const token_t* chunk_t::mhead () const { return _s->token (_mhead >= 0 ? _mzero + _mhead : -1); }
   inline const token_t* chunk_t::mtail () const { return _s->token (_mtail >= 0 ? _mzero + _mtail : -1); }
   inline const token_t* chunk_t::mlast () const { return _s->token (_mzero + _token_num - 1); }
-  
+
   //
   template <typename T>
   struct stat_base {

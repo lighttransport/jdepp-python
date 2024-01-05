@@ -19,6 +19,10 @@
 #include "config.h"
 #endif
 
+#ifndef USE_CEDAR
+#define USE_CEDAR
+#endif
+
 #if   defined (USE_HASH)
 #include <unordered_map>
 #elif defined (USE_TR1_HASH)
