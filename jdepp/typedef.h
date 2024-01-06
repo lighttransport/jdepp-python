@@ -169,7 +169,7 @@ namespace ny {
 #else
     const size_t maxlen = 1024ull*1024ull*1024ull; // 1GB
     read = ioutil::my_getline(fp, line, maxlen);
-    if (read == -1) {
+    if (read == size_t(-1)) {
       return false;
     }
 #endif
