@@ -1,6 +1,16 @@
 // J.DepP -- Japanese Dependency Parsers
 //  $Id: pdep.cc 1944 2022-03-17 17:50:39Z ynaga $
 // Copyright (c) 2008-2015 Naoki Yoshinaga <ynaga@tkl.iis.u-tokyo.ac.jp>
+
+#if defined(_MSC_VER)
+#ifndef WIN32_LEAN_AND_MEAN      
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+typedef SSIZE_T ssize_t;
+#endif
+
+
 #include "pdep.h"
 
 namespace pdep {

@@ -6,7 +6,9 @@
 #include <smmintrin.h>
 #endif
 
-#define my_warnx(msg) fprintf(stdout, msg)
+#include "io-util.hh"
+
+//#define my_warnx(msg) fprintf(stdout, msg)
 
 namespace pecco {
   // static const
@@ -63,7 +65,7 @@ namespace pecco {
       my_warnx ("WARNING: no ref examples [-e], no sigmoid fitting");
       return;
     }
-#if 0
+#if 1
     std::vector <double> f;
     std::vector <bool>   label;
     ny::uint prior1 (0), prior0 (0);
@@ -312,10 +314,10 @@ namespace pecco {
     } else {
       if (_opt.verbose > 0)
         std::fprintf (stderr, "loading/compiling model parameters..");
-#if 0
+#if 1
       FILE* reader = std::fopen (model, "r");
       if (! reader)
-        errx (1, HERE "no such file: %s", model);
+        my_errx (1, "no such file: %s", model);
       bool   header = true;
       bool   linear = false;
       char*  line   = 0;
@@ -347,7 +349,7 @@ namespace pecco {
             if (*line == '0')
               linear = true, _s = 1, _r = 0, _d = 1;
             else if (*line != '1')
-              errx (1, HERE "unsupported kernel used.");
+              my_errx (1, "%s", "unsupported kernel used.");
           } else if (char* q = std::strstr (line, " # kernel parameter")) {
             if (linear) continue;
             switch (q[21]) {
@@ -963,5 +965,7 @@ namespace pecco {
   template void kernel_model::_splitClassify <true,  MULTI>   (ny::fv_t&, double*);
   template void kernel_model::_splitClassify <false, BINARY>  (ny::fv_t&, double*);
   template void kernel_model::_splitClassify <false, MULTI>   (ny::fv_t&, double*);
+  
 }
 // score to weight
+//

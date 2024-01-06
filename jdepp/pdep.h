@@ -1,4 +1,4 @@
-/// J.DepP -- Japanese Dependency Parsers
+﻿/// J.DepP -- Japanese Dependency Parsers
 //  $Id: pdep.h 1943 2022-03-17 17:48:45Z ynaga $
 // Copyright (c) 2008-2015 Naoki Yoshinaga <ynaga@tkl.iis.u-tokyo.ac.jp>
 //
@@ -8,6 +8,7 @@
 #define PDEP_H
 
 #ifdef _WIN32
+#include <io.h>
 #else
 #include <unistd.h>
 //#include <err.h>
@@ -996,15 +997,15 @@ namespace pdep {
       std::fprintf (_writer, "\n");
     }
     // feature vector generators
-    __attribute__((always_inline)) void _add_boolean_feature (const bool flag);
-    __attribute__((always_inline)) void _add_boolean_feature (const bool flag, const bool flag_);
-    __attribute__((always_inline)) void _add_string_feature  (const int id);
-    __attribute__((always_inline)) void _add_local_feature   (const chunk_t* const bi, const int h);
-    __attribute__((always_inline)) void _add_global_feature  (const chunk_t* const bi, const chunk_t* const bj);
+    void _add_boolean_feature (const bool flag);
+    void _add_boolean_feature (const bool flag, const bool flag_);
+    void _add_string_feature  (const int id);
+    void _add_local_feature   (const chunk_t* const bi, const int h);
+    void _add_global_feature  (const chunk_t* const bi, const chunk_t* const bj);
     // void _add_cluster_feature  (const token_t* const m);
-    __attribute__((always_inline)) void _add_token_feature (const token_t* const m);
-    __attribute__((always_inline)) void _add_particle_feature (const chunk_t* const bi, const chunk_t* const bj);
-    void _add_boolean_feature  (const bool flag, const bool flag_, const bool flag__)__attribute__((always_inline));
+    void _add_token_feature (const token_t* const m);
+    void _add_particle_feature (const chunk_t* const bi, const chunk_t* const bj);
+    void _add_boolean_feature  (const bool flag, const bool flag_, const bool flag__);
     void _add_coord_feature    (const chunk_t* const bi, const chunk_t* const bj);
     void _event_gen_from_tuple (const int i);
     void _event_gen_from_tuple (const int i, const int j);

@@ -206,8 +206,8 @@ public:
           pos += _f2dpn[(*it * NL + li) * D + i].pos * _dpolyk[len * D + i];
           neg += _f2dpn[(*it * NL + li) * D + i].neg * _dpolyk[len * D + i];
         }
-        p[li].pos += std::min (pos, _f2nf[*it * NL + li].pos);
-        p[li].neg += std::max (neg, _f2nf[*it * NL + li].neg);
+        p[li].pos += (std::min) (pos, _f2nf[*it * NL + li].pos);
+        p[li].neg += (std::max) (neg, _f2nf[*it * NL + li].neg);
       }
       if (it == first) break;
       p -= NL, std::copy (p + NL, p + NL * 2, p);

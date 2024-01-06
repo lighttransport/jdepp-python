@@ -18,6 +18,9 @@
 #include "classify.h"
 
 namespace pecco {
+  // forward decl
+  class kernel_model;
+
   class kernel_model : public ClassifierBase <kernel_model>
   {
     // type alias
@@ -283,7 +286,7 @@ namespace pecco {
       --it; --len;
       if (*it >= _f_r) { // use incremental polynomial kernel to bound weights
         const pn_t* const pn = &_f2pn[*it * NL];
-        const ny::uint max_dot = std::min (_maf, len); // max inner product
+        const ny::uint max_dot = (std::min) (_maf, len); // max inner product
         for (ny::uint li = 0; li < NL; ++li) {
           p[li].pos += pn[li].pos * _polyk[max_dot] + pn[li].neg * _polyk[0];
           p[li].neg += pn[li].neg * _polyk[max_dot] + pn[li].pos * _polyk[0];
@@ -295,8 +298,8 @@ namespace pecco {
             pos += _f2dpn[(*it * NL + li) * D + i].pos * _dpolyk[len * D + i];
             neg += _f2dpn[(*it * NL + li) * D + i].neg * _dpolyk[len * D + i];
           }
-          p[li].pos += std::min (pos, _f2nf[*it * NL + li].pos);
-          p[li].neg += std::max (neg, _f2nf[*it * NL + li].neg);
+          p[li].pos += (std::min) (pos, _f2nf[*it * NL + li].pos);
+          p[li].neg += (std::max) (neg, _f2nf[*it * NL + li].neg);
         }
       }
       if (it == first) break;
@@ -304,4 +307,5 @@ namespace pecco {
     }
   }
 }
+
 #endif /* POLYK_CLASSIFY_H */

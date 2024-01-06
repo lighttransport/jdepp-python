@@ -60,6 +60,8 @@ namespace pecco {
   template ny::uint strton (const char*);
   template float    strton (const char*);
   template double   strton (const char*);
+
+#if 0
   // convert example to feature vector
   template <typename T>
   void ClassifierBase <T>::_convertFv2Fv (char* p, ny::fv_t& fv) const {
@@ -84,6 +86,8 @@ namespace pecco {
           *jt = fi, ++jt;
     fv.erase (jt, fv.end ());
   }
+#endif
+#if 0
   //
   template <typename T>
   void ClassifierBase <T>::_sortFv (ny::fv_t& fv) {
@@ -97,6 +101,9 @@ namespace pecco {
     std::sort (fv.begin (), fv.end ());
 #endif
   }
+#endif
+
+#if 0
   // * a function that estimates the additional cost
   //   when eliminating nodes
   template <typename T>
@@ -111,6 +118,9 @@ namespace pecco {
       default: my_errx (1, "%s", "please add case statement."); return 0; // dummy;
     }
   }
+#endif
+
+#if 0
   // assign younger feature indices to important feature numbers
   template <typename T>
   bool ClassifierBase <T>::_packingFeatures (std::vector <ny::fv_t>& fvv) {
@@ -187,6 +197,8 @@ namespace pecco {
       std::fprintf (stderr, "done.\n");
     return true;
   }
+#endif
+#if 1
   // fstrie construction
   template <typename T>
   bool ClassifierBase <T>::_setFStrie () {
@@ -217,7 +229,7 @@ namespace pecco {
       if (_opt.verbose > 0) std::fprintf (stderr, "done.\n");
     } else {
       if (_opt.verbose > 0) std::fprintf (stderr, "not found.\n");
-#if 0
+#if 1
       FILE* reader = std::fopen (_opt.event, "r");
       if (! reader)
         my_errx (1, "no such event file: %s", _opt.event);
@@ -395,6 +407,7 @@ namespace pecco {
     }
     return true;
   }
+#endif
 #ifdef USE_ARRAY_TRIE
   template <typename T>
   template <int D, bool PRUNE, binary_t FLAG>
@@ -717,6 +730,8 @@ namespace pecco {
   template void ClassifierBase <kernel_model>::_pkeClassify <true, MULTI>  (ny::fv_t&, double*);
   template void ClassifierBase <kernel_model>::_fstClassify <true, BINARY> (double*, const ny::fv_it&, const ny::fv_it&);
   template void ClassifierBase <kernel_model>::_fstClassify <true, MULTI>  (double*, const ny::fv_it&, const ny::fv_it&);
+  template void ClassifierBase <kernel_model>::_fstClassify <false, BINARY>  (double*, const ny::fv_it&, const ny::fv_it&);
+  template void ClassifierBase <kernel_model>::_pmtClassify <false, BINARY>  (double*, const ny::fv_it&, const ny::fv_it&);
 #endif
 #ifdef USE_LINEAR
   template class ClassifierBase <linear_model>;
