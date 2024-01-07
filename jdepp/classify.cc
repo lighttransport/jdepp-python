@@ -61,7 +61,7 @@ namespace pecco {
   template float    strton (const char*);
   template double   strton (const char*);
 
-#if 0
+#if 1
   // convert example to feature vector
   template <typename T>
   void ClassifierBase <T>::_convertFv2Fv (char* p, ny::fv_t& fv) const {
@@ -87,7 +87,7 @@ namespace pecco {
     fv.erase (jt, fv.end ());
   }
 #endif
-#if 0
+#if 1
   //
   template <typename T>
   void ClassifierBase <T>::_sortFv (ny::fv_t& fv) {
@@ -103,7 +103,6 @@ namespace pecco {
   }
 #endif
 
-#if 0
   // * a function that estimates the additional cost
   //   when eliminating nodes
   template <typename T>
@@ -118,9 +117,7 @@ namespace pecco {
       default: my_errx (1, "%s", "please add case statement."); return 0; // dummy;
     }
   }
-#endif
 
-#if 0
   // assign younger feature indices to important feature numbers
   template <typename T>
   bool ClassifierBase <T>::_packingFeatures (std::vector <ny::fv_t>& fvv) {
@@ -128,7 +125,7 @@ namespace pecco {
       std::fprintf (stderr, "packing feature id..");
     // reorder features according to their frequency in training data
     if (_opt.train) {
-#if 0
+#if 1
       FILE* reader =  std::fopen (_opt.train, "r");
       if (! reader) my_errx (1, "no such file: %s", _opt.train);
       _nt         = 0;
@@ -197,8 +194,7 @@ namespace pecco {
       std::fprintf (stderr, "done.\n");
     return true;
   }
-#endif
-#if 1
+
   // fstrie construction
   template <typename T>
   bool ClassifierBase <T>::_setFStrie () {
@@ -407,7 +403,7 @@ namespace pecco {
     }
     return true;
   }
-#endif
+
 #ifdef USE_ARRAY_TRIE
   template <typename T>
   template <int D, bool PRUNE, binary_t FLAG>
@@ -633,7 +629,7 @@ namespace pecco {
   template <typename T>
   void ClassifierBase <T>::batch () { // batch classification
     if (_opt.verbose > 0) std::fprintf (stderr, "processing examples..");
-#if 0
+#if 1
     const bool     output_example = _opt.output & 0x100;
     const output_t output         = static_cast <output_t> (_opt.output & 0xff);
     FILE* reader = _opt.test ? std::fopen (_opt.test, "r") : stdin;

@@ -200,10 +200,10 @@ namespace pecco {
     } else {
       if (_opt.verbose > 0)
         std::fprintf (stderr, "loading/compiling model parameters..");
-#if 0
+#if 1
       FILE *reader = std::fopen (model, "r");
       if (! reader)
-        errx (1, HERE "no such file: %s", model);
+        my_errx (1, "no such file: %s", model);
       std::map <ny::fv_t, ny::uint> fc2fci; // conjunctive features
       ny::fv_t cf;
       char*  line = 0;
