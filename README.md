@@ -1,5 +1,10 @@
 # jdepp-python
+
 Python binding for J.DepP(C++ implementation of Japanese Dependency Parsers)
+
+## Status
+
+W.I.P.
 
 ## Build configuration
 
