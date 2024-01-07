@@ -23,7 +23,7 @@ linux_aarch64_task:
     cpu: 4
     memory: 4G
   environment:
-    TWINE_PASSWORD: ENCRYPTED[c06553df9d8d52500784b41f5c45afce5329d3397cf8e7e2a6dd82990e3f32b4362efabc028a213eacf9fc0181acfb86]
+    TWINE_PASSWORD: ENCRYPTED[88f22b6fab51dc9306c5690f2ad999f4114320fecbcff933864d3f225bbd03037ca511742e8572fa2b63dfa9cebee365]
 
   install_pre_requirements_script:
     - apt install -y python3-venv python-is-python3
