@@ -62,7 +62,7 @@ namespace pecco {
       std::fprintf (stderr, "Perform sigmoid fitting using examples [-e]..\n");
     // parameters
     if (!_opt.train) {
-      my_warnx ("WARNING: no ref examples [-e], no sigmoid fitting");
+      my_warnx ("%s", "WARNING: no ref examples [-e], no sigmoid fitting");
       return;
     }
 #if 1
@@ -479,13 +479,13 @@ namespace pecco {
     if (_d == 1) {
 #ifdef USE_CEDAR
       if (_opt.algo == FST || _opt.algo == PMT)
-        my_warnx ("NOTE: [-t 2 or 3] is useless in d = 1.");
+        my_warnx ("%s", "NOTE: [-t 2 or 3] is useless in d = 1.");
 #else
       if (_opt.algo == FST)
-        my_warnx ("NOTE: [-t 2] is useless in d = 1.");
+        my_warnx ("%s", "NOTE: [-t 2] is useless in d = 1.");
 #endif
       if (_f_r - 1 < _nf)
-        my_warnx ("NOTE: [-r > 0] is useless in d = 1.");
+        my_warnx ("%s", "NOTE: [-r > 0] is useless in d = 1.");
     }
     _fv.reserve (_maf);
     _score.resize (_nl);
@@ -532,7 +532,7 @@ namespace pecco {
       }
     }
     if (_opt.algo != PKI && (_sigma != 0.0 || _minsup != 1) && _opt.verbose > 0) {
-      my_warnx ("NOTE: approximated computation;");
+      my_warnx ("%s", "NOTE: approximated computation;");
       std::fprintf (stderr, " %d/%d features used, sigma=%g, minsup=%u\n",
                     _nf_cut, _nf, _sigma, _minsup); // _f_r - 1
     }
