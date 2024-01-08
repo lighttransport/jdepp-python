@@ -1,6 +1,7 @@
 [build-system]
 requires = [
-    "setuptools>=42",
+    "setuptools>=64",
+    "setuptools_scm>=8",
     "wheel",
     "pybind11>=2.10.0",
 ]
@@ -11,9 +12,16 @@ line-length = 140
 
 [project]
 name = "jdepp"
-version = "0.1.0"
+#version = "0.1.0"
+
+# Use setuptools_scm
+dynamic = ["version"]
+
 readme = {file = "README.md", content-type = "text/markdown"}
 
 
 [project.scripts]
 jdepp = "jdepp:main"
+
+[tool.setuptools_scm]
+version_file = "jdepp/_version.py"
