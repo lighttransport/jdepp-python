@@ -30,3 +30,4 @@ J.DepP is licensed under GPLv2/LGPLv2.1/BSD triple license.
 
 * paco, cedar: GPLv2/LGPLv2.1/BSD triple license. We choose BSD license.
 * io-util: MIT license.
+* optparse: Unlicense https://github.com/skeeto/optparse

@@ -8,7 +8,6 @@
 #define CLASSIFY_H
 
 //#include <sys/stat.h>
-//#include <getopt.h>
 //#include <err.h>
 #include <cmath>
 #include <cassert>
@@ -22,6 +21,8 @@
 #include <numeric>
 #include "typedef.h"
 #include "timer.h"
+
+#include "optparse.h"
 
 #ifndef DEFAULT_CLASSIFIER
 #define DEFAULT_CLASSIFIER FST
@@ -99,24 +100,24 @@ test    test file              test examples; read STDIN if omitted\n\
   -v, --verbose=INT            verbosity level (0)\n\
   -h, --help                   show this help and exit\n"
 
-#if 0
-static const  char* pecco_short_options = "t:e:p:f:i:bcO:o:m:s:r:v:h";
-static struct option pecco_long_options[] = {
-  {"classifier type",   required_argument, NULL, 't'},
-  {"event",             required_argument, NULL, 'e'},
-  {"pmt-size",          required_argument, NULL, 'p'},
-  {"fst-event",         required_argument, NULL, 'f'},
-  {"fst-prune_ratio",   required_argument, NULL, 'i'},
-  {"fst-build-verbose", no_argument,       NULL, 'b'},
-  {"force-compile",     no_argument,       NULL, 'c'},
-  {"output",            required_argument, NULL, 'O'},
-  {"output!",           required_argument, NULL, 'o'},
-  {"pke-minsup",        required_argument, NULL, 'm'},
-  {"pke-sigma",         required_argument, NULL, 's'},
-  {"split-ratio",       required_argument, NULL, 'r'},
-  {"verbose",           required_argument, NULL, 'v'},
-  {"help",              no_argument,       NULL, 'h'},
-  {NULL, 0, NULL, 0}
+#if 1
+//static const  char* pecco_short_options = "t:e:p:f:i:bcO:o:m:s:r:v:h";
+static struct optparse_long pecco_long_options[] = {
+  {"classifier type",   't', OPTPARSE_REQUIRED},
+  {"event",             'e', OPTPARSE_REQUIRED},
+  {"pmt-size",          'p', OPTPARSE_REQUIRED},
+  {"fst-event",         'f', OPTPARSE_REQUIRED},
+  {"fst-prune_ratio",   'i', OPTPARSE_REQUIRED},
+  {"fst-build-verbose", 'b', OPTPARSE_NONE},
+  {"force-compile",     'c', OPTPARSE_NONE},
+  {"output",            'O', OPTPARSE_REQUIRED},
+  {"output!",           'o', OPTPARSE_REQUIRED},
+  {"pke-minsup",        'm', OPTPARSE_REQUIRED},
+  {"pke-sigma",         's', OPTPARSE_REQUIRED},
+  {"split-ratio",       'r', OPTPARSE_REQUIRED},
+  {"verbose",           'v', OPTPARSE_REQUIRED},
+  {"help",              'h', OPTPARSE_NONE},
+  {0}
 };
 
 extern char* optarg;
@@ -153,18 +154,21 @@ namespace pecco {
     size_t       pmsize;
     option () : com ("--"), train (0), test (0), model (0), event (""), minsup ("1"), sigma ("0"), fratio ("0"), type (KERNEL), algo (DEFAULT_CLASSIFIER),
                 output (0), fst_factor (0), fst_verbose (false), force (false), verbose (0), pmsize (20)  {}
-#if 0
+#if 1
     option (int argc, char ** argv) : com (argc ? argv[0] : "--"), train (0), test (0), model (""), event (""), minsup ("1"), sigma ("0"), fratio ("0"), type (KERNEL), algo (DEFAULT_CLASSIFIER), output (NONE),  fst_factor (0), fst_verbose (false), force (false), verbose (0), pmsize (20) {
       set (argc, argv);
     }
-    void set (int argc, char ** argv) { // getOpt
+    void set (int argc, char ** argv) { // optparse
       if (argc == 0) return;
       optind = 1;
       size_t minsup_ = 1;
       double sigma_ (0.0), fratio_ (0.0);
+
+      struct optparse options;
+      optparse_init(&options, argv);
+
       while (1) {
-        int opt = getopt_long (argc, argv,
-                               pecco_short_options, pecco_long_options, NULL);
+        int opt = optparse_long (&options, pecco_long_options, NULL);
         if (opt == -1) break;
         char* err = NULL;
         switch (opt) {
@@ -190,7 +194,7 @@ namespace pecco {
           default:  printCredit (); std::exit (0);
         }
         if (err && *err)
-          errx (1, HERE "unrecognized option value: %s", optarg);
+          my_errx (1, "unrecognized option value: %s", optarg);
       }
       // errors & warnings
 #ifdef USE_CEDAR
@@ -198,44 +202,44 @@ namespace pecco {
 #else
       if (algo != PKE && algo != FST && algo != PKI)
 #endif
-        errx (1, HERE "unknown classifier type [-t].");
+        my_errx (1, "%s", "unknown classifier type [-t].");
       if (algo == PKI) {
         if (minsup_ != 1)
-          errx (1, HERE "PKE minsup [-m] must be 0 in PKI [-t 0].");
+          my_errx (1, "%s", "PKE minsup [-m] must be 0 in PKI [-t 0].");
         if (sigma_ != 0.0)
-          errx (1, HERE "PKE simga [-s] must be 0 in PKI [-t 0].");
+          my_errx (1, "%s", "PKE simga [-s] must be 0 in PKI [-t 0].");
         if (fratio_ != 0.0)
-          errx (1, HERE "SPLIT ratio [-r] must be 0 in PKI [-t 0].");
+          my_errx (1, "%s", "SPLIT ratio [-r] must be 0 in PKI [-t 0].");
       }
       if (std::strcmp (argv[0], "--") == 0) return; // skip
       if (argc < optind + 1) {
         printCredit ();
-        errx (1, HERE "Type `%s --help' for option details.", com);
+        my_errx (1, "Type `%s --help' for option details.", com);
       }
 #ifndef USE_MODEL_SUFFIX
       if (fst_verbose)
-        errx (1, HERE "[-b] building multiple FSTs are useless since model suffix disabled.");
+        my_errx (1, "%s", "[-b] building multiple FSTs are useless since model suffix disabled.");
 #endif
       model = argv[optind];
       setType ();
       if (type == LINEAR) {
         if (algo == PKI)
-          errx (1, HERE "PKI [-t 0] is not available for LLM.");
+          my_errx (1, "%s", "PKI [-t 0] is not available for LLM.");
         if (minsup_ != 1)
-          warnx ("WARNING: PKE minsup [-m] is ignored in LLM.");
+          my_warnx ("%s", "WARNING: PKE minsup [-m] is ignored in LLM.");
         if (sigma_ != 0.0)
-          warnx ("WARNING: PKE sigma [-s] is ignored in LLM.");
+          my_warnx ("%s", "WARNING: PKE sigma [-s] is ignored in LLM.");
         if (fratio_ != 0.0)
-          warnx ("WARNING: SPLIT ratio [-r] is ignored in LLM.");
+          my_warnx ("%s", "WARNING: SPLIT ratio [-r] is ignored in LLM.");
       }
 #ifdef USE_CEDAR
       if (algo == PMT) {
         if (pmsize <= 0)
-          errx (1, HERE "PMT [-t 3] requires > 0 size [-p]");
+          my_errx (1, "%s", "PMT [-t 3] requires > 0 size [-p]");
       } else pmsize = 0;
 #endif
       if (algo == FST && std::strcmp (event, "") == 0)
-        errx (1, HERE "FST [-t 2] requires possible examples [-f];\n (you can use the training examples)");
+        my_errx (1, "%s", "FST [-t 2] requires possible examples [-f];\n (you can use the training examples)");
       if (++optind != argc) test = argv[optind];
     }
 #endif
@@ -755,7 +759,7 @@ namespace pecco {
     template <bool PRUNE, binary_t FLAG>
     void _baseClassify (double* score, ny::fv_it it, const ny::fv_it& beg, const ny::fv_it& end)
     { _derived ()->template baseClassify <PRUNE, FLAG> (score, it, beg, end); }
-    bool _setOpt (const char* opt_str);
+    //bool _setOpt (const char* opt_str);
   public:
     ClassifierBase (const pecco::option& opt) :
       _opt (opt), _score (), _fv (), _sorter (), _d (0), _nl (0), _nf (0), _nfbit (0), _nf_cut (0), _ncf (0),  _nt (0), _tli (0), _li2l (), _l2li (), _fn2fi (), _fi2fn (), _fncnt (), _ftrie (), _fstrie (),

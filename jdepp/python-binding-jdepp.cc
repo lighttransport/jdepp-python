@@ -9,6 +9,9 @@
 #include <sstream>
 #include <thread>
 
+#define OPTPARSE_IMPLEMENTATION
+#include "optparse.h"
+
 // To increase portability, MMAP is off by default.
 // #defined JAGGER_USE_MMAP_IO
 

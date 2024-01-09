@@ -28,6 +28,8 @@
 #include "config.h"
 #endif
 
+#include "optparse.h"
+
 #ifndef SURFACE_END
 #define SURFACE_END '\t'
 #endif
@@ -39,6 +41,10 @@
 
 #ifndef USE_MECAB
 #define USE_MECAB
+#endif
+
+#ifndef USE_OPAL
+#define USE_OPAL
 #endif
 
 #ifndef FEATURE_SEP
@@ -178,40 +184,40 @@ test    test file\n\
   -c, --reg-cost=INT          cost of regularization\n\
 \n"
 
-#if 0
+#if 1
 #ifdef USE_AS_STANDALONE
-static const  char* jdepp_short_options = "t:e:i:c:m:p:I:b:l:n:d:x:v:h";
+//static const  char* jdepp_short_options = "t:e:i:c:m:p:I:b:l:n:d:x:v:h";
 #else
-static const  char* jdepp_short_options = "t:e:i:c:m:p:I:b:l:n:x:v:h";
+//static const  char* jdepp_short_options = "t:e:i:c:m:p:I:b:l:n:x:v:h";
 #endif
-static struct option jdepp_long_options[] = {
-  {"type",         required_argument, NULL, 't'},
-  {"encoding",     required_argument, NULL, 'e'},
-  {"ignore",       required_argument, NULL, 'i'},
-  {"corpus",       required_argument, NULL, 'c'},
-  {"model-dir",    required_argument, NULL, 'm'},
-  {"parser",       required_argument, NULL, 'p'},
-  {"input-format", required_argument, NULL, 'I'},
-  {"cluster-bits", required_argument, NULL, 'b'},
-  {"learner",      required_argument, NULL, 'l'},
-  {"max-sent",     required_argument, NULL, 'n'},
+static struct optparse_long jdepp_long_options[] = {
+  {"type",         't', OPTPARSE_REQUIRED},
+  {"encoding",     'e', OPTPARSE_REQUIRED},
+  {"ignore",       'i', OPTPARSE_REQUIRED},
+  {"corpus",       'c', OPTPARSE_REQUIRED},
+  {"model-dir",    'm', OPTPARSE_REQUIRED},
+  {"parser",       'p', OPTPARSE_REQUIRED},
+  {"input-format", 'I', OPTPARSE_REQUIRED},
+  {"cluster-bits", 'b', OPTPARSE_REQUIRED},
+  {"learner",      'l', OPTPARSE_REQUIRED},
+  {"max-sent",     'n', OPTPARSE_REQUIRED},
 #ifdef USE_AS_STANDALONE
-  {"mecab-dic",    required_argument, NULL, 'd'},
+  {"mecab-dic",    'd', OPTPARSE_REQUIRED},
 #endif
-  {"xcode",        required_argument, NULL, 'x'},
-  {"verbose",      required_argument, NULL, 'v'},
-  {"help",         no_argument,       NULL, 'h'},
-  {NULL, 0, NULL, 0}
+  {"xcode",        'x', OPTPARSE_REQUIRED},
+  {"verbose",      'v', OPTPARSE_REQUIRED},
+  {"help",         'h', OPTPARSE_NONE},
+  {0}
 };
 
 #ifdef USE_MAXENT
-static const  char*  maxent_short_options = "d:l:c:h";
-static struct option maxent_long_options[] = {
-  {"degree",       required_argument, NULL, 'd'},
-  {"algorithm",    required_argument, NULL, 'l'},
-  {"reg-cost",     required_argument, NULL, 'c'},
-  {"help",         no_argument,       NULL, 'h'},
-  {NULL, 0, NULL, 0}
+//static const  char*  maxent_short_options = "d:l:c:h";
+static struct optparse_long maxent_long_options[] = {
+  {"degree",       'd', OPTPARSE_REQUIRED},
+  {"algorithm",    'l', OPTPARSE_REQUIRED},
+  {"reg-cost",     'c', OPTPARSE_REQUIRED},
+  {"help",         'h', OPTPARSE_NONE},
+  {0}
 };
 #endif
 
@@ -323,7 +329,7 @@ namespace pdep {
     int          ignore_len;
     bool         utf8;
 
-#if 0
+#if 1
     //
     option (int argc, char** argv) :
       com (argv[0]), train ("train.JDP"),
@@ -347,9 +353,10 @@ namespace pdep {
       // getOpt
       if (argc == 0) return;
       optind = 1;
+      struct optparse options;
+      optparse_init(&options, argv);
       while (1) {
-        int opt = getopt_long (argc, argv,
-                               jdepp_short_options, jdepp_long_options, NULL);
+        int opt = optparse_long (&options, jdepp_long_options, NULL);
         if (opt == -1) break;
         char* err = NULL;
         switch (opt) {
@@ -391,14 +398,14 @@ namespace pdep {
       }
       // errors & warnings
       if (learner != OPAL && learner != SVM && learner != MAXENT)
-        my_errx (1, "unknown learner [-l].");
+        my_errx (1, "%s", "unknown learner [-l].");
       if (mode != LEARN && mode != PARSE && mode != BOTH && mode != CACHE)
-        my_errx (1, "unknown running mode [-t].");
+        my_errx (1, "%s","unknown running mode [-t].");
       if (parser != LINEAR && parser != CHUNKING && parser != BACKWARD &&
           parser != TOURNAMENT)
-        my_errx (1, "unknown parsing algorithm [-p].");
+        my_errx (1, "%s","unknown parsing algorithm [-p].");
       if (input != RAW && input != CHUNK && input != DEPND)
-        my_errx (1, "unknown input format [-I].");
+        my_errx (1, "%s","unknown input format [-I].");
       struct stat st;
       if (stat (model_dir, &st) != 0)
         my_errx (1, "no such directory: %s [-m]", model_dir);
@@ -407,7 +414,7 @@ namespace pdep {
         my_errx (1, "MeCab dict [-d]: no such file or directory: %s", mecab_dic);
 #endif
       if (input == CHUNK && parser != LINEAR)
-        warnx ("NOTE: parsing algorithm [-p] is ignored in training a chunker.");
+        my_warnx ("%s", "NOTE: parsing algorithm [-p] is ignored in training a chunker.");
       // learner options
       if (std::strcmp (argv[optind - 1], "--") == 0) --optind;
       _set_library_options (optind, argc, argv, learner_argc, learner_argv);
@@ -420,7 +427,7 @@ namespace pdep {
     void printHelp   () { std::fprintf (stderr, JDEPP_OPT0 JDEPP_OPT1 JDEPP_OPT_TRAIN JDEPP_OPT_TEST JDEPP_OPT_MISC); }
 #endif
   private:
-#if 0
+#if 1
     void _set_library_options (int& i, const int argc, char** argv,
                                int& largc, char**& largv) {
       if (i < argc) {
@@ -439,7 +446,6 @@ namespace pdep {
 #endif
   };
 #ifdef USE_MAXENT
-#error "not supported"
   enum maxent_algo_t { SGD, OWLQN, LBFGS }; // MaxEnt optimizer
   // wrapper option class for maxent
   struct maxent_option { // option handler
@@ -453,9 +459,10 @@ namespace pdep {
     void set (int argc, char** argv) { // getOpt
       if (argc == 0) return;
       optind = 1;
+      struct optparse options;
+      optparse_init(&options, argv);
       while (1) {
-        int opt = getopt_long (argc, argv,
-                               maxent_short_options, maxent_long_options, NULL);
+        int opt = optparse_long (&options, maxent_long_options, NULL);
         if (opt == -1) break;
         char* err = NULL;
         switch (opt) {

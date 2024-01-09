@@ -4,7 +4,7 @@
 #ifndef OPAL_PA_H
 #define OPAL_PA_H
 
-#include <getopt.h>
+//#include <getopt.h>
 #include <stdint.h>
 #include <err.h>
 #include <cstdio>
@@ -20,13 +20,22 @@
 #include <numeric>
 #include <iterator>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
+#include "optparse.h"
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#ifdef _OPENMP
-#include <omp.h>
+#include "typedef.h"
+
+#ifndef MAX_NUM_CLASSES
+#define MAX_NUM_CLASSES 1024
 #endif
+
 
 #if   defined (USE_MT19937)
 #include <random>
@@ -145,34 +154,34 @@ static const char* opal_opts = "t:d:kpO:o:l:c:i:asb:M:Ph";
 #endif
 #endif
 
-static struct option opal_long_opts[] = {
-  {"kernel",             required_argument, NULL, 't'},
-  {"kernel-degree",      required_argument, NULL, 'd'},
-  {"kernel-splitN",      required_argument, NULL,  0 },
-  {"max-trie-size",      required_argument, NULL,  0 },
-  {"kernel-slicing",     required_argument, NULL, 'k'},
-  {"pruning-margin",     required_argument, NULL, 'p'},
-  {"output",             required_argument, NULL, 'O'},
-  {"output!",            required_argument, NULL, 'o'},
-  {"learner",            required_argument, NULL, 'l'},
-  {"reg-cost",           required_argument, NULL, 'c'},
-  {"iteration",          required_argument, NULL, 'i'},
-  {"averaging",          no_argument,       NULL, 'a'},
-  {"shuffing",           no_argument,       NULL, 's'},
-  {"buffer",             required_argument, NULL, 'b'},
-  {"feat-threshold",     required_argument, NULL,  0 },
-  {"model0",             required_argument, NULL,  0 },
-  {"max-examples",       required_argument, NULL, 'M'},
+static struct optparse_long opal_long_opts[] = {
+  {"kernel",             't', OPTPARSE_REQUIRED},
+  {"kernel-degree",      'd', OPTPARSE_REQUIRED},
+  {"kernel-splitN",       0 , OPTPARSE_REQUIRED},
+  {"max-trie-size",       0 , OPTPARSE_REQUIRED},
+  {"kernel-slicing",     'k', OPTPARSE_REQUIRED},
+  {"pruning-margin",     'p', OPTPARSE_REQUIRED},
+  {"output",             'O', OPTPARSE_REQUIRED},
+  {"output!",            'o', OPTPARSE_REQUIRED},
+  {"learner",            'l', OPTPARSE_REQUIRED},
+  {"reg-cost",           'c', OPTPARSE_REQUIRED},
+  {"iteration",          'i', OPTPARSE_REQUIRED},
+  {"averaging",          'a', OPTPARSE_NONE},
+  {"shuffing",           's', OPTPARSE_NONE},
+  {"buffer",             'b', OPTPARSE_REQUIRED},
+  {"feat-threshold",      0 , OPTPARSE_REQUIRED},
+  {"model0",              0 , OPTPARSE_REQUIRED},
+  {"max-examples",       'M', OPTPARSE_REQUIRED},
 #ifdef USE_MULTICLASS
-  {"num-classes",        required_argument, NULL,  0 },
+  {"num-classes",         0 , OPTPARSE_REQUIRED},
 #else
-  {"probability-output", required_argument, NULL, 'P'},
+  {"probability-output", 'P', OPTPARSE_REQUIRED},
 #endif
 #ifdef _OPENMP
-  {"num-threads",        no_argument,       NULL, 'n'},
+  {"num-threads",        'n', OPTPARSE_NONE},
 #endif
-  {"help",               no_argument,       NULL, 'h'},
-  {NULL, 0, NULL, 0}
+  {"help",               'h', OPTPARSE_NONE},
+  {0}
 };
 
 extern char* optarg;
@@ -241,7 +250,7 @@ namespace opal {
     if (std::numeric_limits <T>::is_specialized &&
         (ret  < static_cast <int64_t>  (std::numeric_limits <T>::min ()) ||
          retu > static_cast <uint64_t> (std::numeric_limits <T>::max ())))
-      errx (1, "overflow: %s", p);
+      my_errx (1, "overflow: %s", p);
     return static_cast <T> (ret);
   }
   class byte_encoder {
@@ -374,8 +383,10 @@ namespace opal {
       if (argc == 0) return;
       optind = 1;
       int id = 0;
+      struct optparse options;
+      optparse_init(&options, argv);
       while (1) {
-        int opt = getopt_long (argc, argv, opal_opts, opal_long_opts, &id);
+        int opt = optparse_long (&options, opal_long_opts, &id);
         if (opt == -1) break;
         char* err = NULL;
         switch (opt) {
@@ -402,42 +413,42 @@ namespace opal {
             // misc
           case 'h': printCredit (); printHelp (); std::exit (0);
           case  0 :
-            if      (std::strcmp (opal_long_opts[id].name, "kernel-splitN") == 0)
+            if      (std::strcmp (opal_long_opts[id].longname, "kernel-splitN") == 0)
               splitN = strton <uint> (optarg, &err);
-            else if (std::strcmp (opal_long_opts[id].name, "max-trie-size") == 0)
+            else if (std::strcmp (opal_long_opts[id].longname, "max-trie-size") == 0)
               trieT = strton <uint> (optarg, &err) << 20;
-            else if (std::strcmp (opal_long_opts[id].name, "feat-threshold") == 0)
+            else if (std::strcmp (opal_long_opts[id].longname, "feat-threshold") == 0)
               featT = strton <uint> (optarg, &err);
-            else if (std::strcmp (opal_long_opts[id].name, "model0") == 0)
+            else if (std::strcmp (opal_long_opts[id].longname, "model0") == 0)
               model0  = optarg;
 #ifdef USE_MULTICLASS
-            else if (std::strcmp (opal_long_opts[id].name, "num-classes") == 0)
+            else if (std::strcmp (opal_long_opts[id].longname, "num-classes") == 0)
               nclass  = strton <uint> (optarg, &err);
 #endif
             break;
           default:  printCredit (); std::exit (0);
         }
         if (err && *err)
-          errx (1, "unrecognized option value: %s", optarg);
+          my_errx (1, "unrecognized option value: %s", optarg);
       }
       // errors & warnings
       if (! trieT) trieT = std::numeric_limits <uint>::max ();
       if (kernel != POLY && kernel != LINEAR)
-        errx (1, "unknown kernel fucntion [-t].");
+        my_errx (1, "%s", "unknown kernel fucntion [-t].");
       if (algo != P && algo != PA && algo != PA1 && algo != PA2)
-        errx (1, "unknown learning algorithm [-l].");
+        my_errx (1, "%s", "unknown learning algorithm [-l].");
       if (buffer != RAM && buffer != DISK && buffer != null)
-        errx (1, "unknown buffering method [-b].");
+        my_errx (1, "%s", "unknown buffering method [-b].");
       if (iter == 0) errx (1, "# iterations [-i] must be >= 1.");
       if (C != 1.0 && (algo == P || algo == PA))
-        warnx ("NOTE: reg-cost C [-c] is ignored in P [-l 0] and PA [-l 1].");
+        my_warnx ("%s", "NOTE: reg-cost C [-c] is ignored in P [-l 0] and PA [-l 1].");
       if (kernel == LINEAR) {
-        if (d != 0) warnx ("NOTE: kernel-degree [-d] is ignored in linear kernel [-t 0].");
+        if (d != 0) my_warnx ("%s", "NOTE: kernel-degree [-d] is ignored in linear kernel [-t 0].");
         d = 0;
       } else {
-        if (d == 0 || d >= 4) errx (1, "set kernel_degree [-d] to 1-3.");
+        if (d == 0 || d >= 4) my_errx (1, "%s", "set kernel_degree [-d] to 1-3.");
         if (d == 1 && (slicing || pruning)) {
-          warnx ("NOTE: kernel slicing [-k] (or [-p]) is disabled since it is useless for d=1.");
+          my_warnx ("%s", "NOTE: kernel slicing [-k] (or [-p]) is disabled since it is useless for d=1.");
           slicing = pruning = false;
         }
       }
@@ -446,7 +457,7 @@ namespace opal {
       if (std::strcmp (com, "--") == 0) return;
       if (argc < optind + 3) {
         printCredit ();
-        errx (1, "Type `%s --help' for option details.", com);
+        my_errx (1, "Type `%s --help' for option details.", com);
       }
       train = argv[optind];
       model = argv[++optind];
@@ -508,7 +519,7 @@ namespace opal {
     const char* get_label (const size_t i) const { return _sbag[i]; }
     void read (char* p, char* const p_end) { // # labels:
       if (std::strncmp (p, "# labels: ", 10) != 0)
-        errx (1, "premature label definition.");
+        my_errx (1, "%s", "premature label definition.");
       p += 9; // "# labels:"
       while (++p) {
         char* ys = p; while (p != p_end && ! isspace (*p)) ++p; *p = '\0';
@@ -578,7 +589,7 @@ namespace opal {
     void load (const char* ffn) {
       _fn2fs.clear ();
       FILE* fp = std::fopen (ffn, "rb");
-      if (! fp) errx (1, "cannot read features: %s", ffn);
+      if (! fp) my_errx (1, "cannot read features: %s", ffn);
       char*  line = 0;
       size_t read = 0;
       while (getLine (fp, line, read)) {
@@ -596,7 +607,7 @@ namespace opal {
     void save (const char* ffn) const {
       FILE* fp = std::fopen (ffn, "wb");
       if (! fp)
-        errx (1, "cannot write the features: %s", ffn);
+        my_errx (1, "cannot write the features: %s", ffn);
       for (sbag_t::const_iterator it = _fn2fs.begin ();
            it != _fn2fs.end (); ++it)
         std::fprintf (fp, "%s\n", *it);
@@ -715,9 +726,9 @@ namespace opal {
         for (; *p >= '0' && *p <= '9'; ++p) {
           fn *= 10, fn += *p, fn -= '0';
           if (fn > std::numeric_limits <uint>::max ())
-            errx (1, "overflow: %s", ex);
+            my_errx (1, "overflow: %s", ex);
         }
-        if (*p != ':') errx (1, "illegal feature index: %s", ex);
+        if (*p != ':') my_errx (1, "illegal feature index: %s", ex);
 #endif
         fv.push_back (static_cast <uint> (fn));
         while (*p && ! isspace (*p)) ++p;
@@ -857,7 +868,7 @@ namespace opal {
     virtual void read (const char* lfn, lmap* lm, fmap* fm = 0,
                        const bool count = false, const size_t M = 0) {
       FILE* fp = std::fopen (lfn, "r");
-      if (! fp) errx (1, "no such file: %s", lfn);
+      if (! fp) my_errx (1, "no such file: %s", lfn);
       char buf[BUF_SIZE]; std::setvbuf (fp, &buf[0], _IOFBF, BUF_SIZE);
       read (fp, lm, fm, count, M);
       std::fclose (fp);
@@ -991,7 +1002,7 @@ namespace opal {
     }
     void read (const char* lfn, lmap* lm, fmap* fm, const bool flag = false, const size_t M = 0) {
       _fp = lfn ? std::fopen (lfn, "r") : stdin;  // initialize
-      if (! _fp) errx (1, "no such file: %s", lfn);
+      if (! _fp) my_errx (1, "no such file: %s", lfn);
       std::setvbuf (_fp, &_buf[0], _IOFBF, BUF_SIZE);
       _lm = lm; _fm = fm; _flag = flag; _M = M; 
       if (_flag) // read data for feature packing / thresholding
@@ -1098,7 +1109,7 @@ namespace opal {
 #ifdef USE_MULTICLASS
     void init_weight (const uint nclass) {
       if (nclass >= MAX_NUM_CLASSES)
-        errx (1, "set MAX_NUM_CLASSES > %d; configure --with-num-classes=NUM)", nclass);
+        my_errx (1, "set MAX_NUM_CLASSES > %d; configure --with-num-classes=NUM)", nclass);
       _m0.resize  (nclass, fl_t (0));
       if (_opt.kernel == POLY) _bias.resize (nclass, fl_t (0));
       _opt.nclass = nclass;
@@ -1210,7 +1221,7 @@ namespace opal {
 #endif
 #ifdef USE_MULTICLASS
       if (_opt.buffer == null && _opt.nclass <= 1)
-        errx (1, "tell # classes [--num-classes] to opal when you don't buffer the data.");
+        my_errx (1, "tell # classes [--num-classes] to opal when you don't buffer the data.");
       // # classes has been changed
       init_weight (_opt.buffer == null ? _opt.nclass : _lm.nclass ());
 #endif
@@ -1295,7 +1306,7 @@ namespace opal {
         }
 #ifdef USE_MULTICLASS
         if (_opt.buffer == null && _opt.nclass != _lm.nclass ())
-          errx (1, "\n# classes mismatch; [--num-clsses] says %d, actual %d in training data.", _opt.nclass, _lm.nclass ());
+          my_errx (1, "\n# classes mismatch; [--num-clsses] says %d, actual %d in training data.", _opt.nclass, _lm.nclass ());
 #endif
       }
 #ifdef _OPENMP
@@ -1340,7 +1351,7 @@ namespace opal {
       for (typename Pool::elem_t* x = pool.init (); x; x = pool.get ()) {
 #ifdef USE_MULTICLASS
         if (_opt.nclass < _lm.nclass ())
-          errx (1, "set # classes [--num-classes] to an appropriate value.");
+          my_errx (1, "set # classes [--num-classes] to an appropriate value.");
 #endif
         _process_example (*x);
       }
@@ -1444,7 +1455,7 @@ namespace opal {
       FILE* reader = std::fopen (mfn, "r");
       // examine model type
       if (! reader || std::feof (reader)) 
-        errx (1, "cannot read a model: %s", mfn);
+        my_errx (1, "cannot read a model: %s", mfn);
       char buf[BUF_SIZE]; std::setvbuf (reader, &buf[0], _IOFBF, BUF_SIZE);
       const char flag = static_cast <char> (std::fgetc (reader));
       if (std::fseek (reader, 0, SEEK_SET) != 0) return false;
@@ -1454,7 +1465,7 @@ namespace opal {
         _opt.kernel = LINEAR;
 #ifdef USE_MULTICLASS
         if (flag == 0) // w[0] == 0
-          errx (1, "found a model for binary-class; use opal instead of opal-multi");
+          my_errx (1, "found a model for binary-class; use opal instead of opal-multi");
         if (! getLine (reader, line, read)) return false;
         if (char* p = std::strstr (line, "# labels: "))
           _lm.read (p, line + read - 1);
@@ -1465,7 +1476,7 @@ namespace opal {
         const long eow = std::ftell (reader);
 #else
         if (flag != 0) // w[0] != 0
-          errx (1, "found a model for multi-class; use opal-multi instead of opal");
+          my_errx (1, "%s", "found a model for multi-class; use opal-multi instead of opal");
         const long offset = std::ftell (reader);
         if (std::fseek (reader, 0, SEEK_END) != 0) return false; // move to end
         const long eow = std::ftell (reader)
@@ -1513,7 +1524,7 @@ namespace opal {
             const uint d = strton <uint> (line, NULL);
             if (_opt.d) {
               if (_opt.d != d)
-                errx (1, "input kernel_degree [-d] conflicts with %s", mfn);
+                my_errx (1, "input kernel_degree [-d] conflicts with %s", mfn);
             } else {
               _opt.d = d;
               _MIN_N = _opt.shrink ? 1U << PSEUDO_TRIE_N[_opt.d] : _opt.splitN + 1;
@@ -1526,7 +1537,7 @@ namespace opal {
           }
 #ifdef USE_MULTICLASS
         if (_opt.nclass == 1)
-          errx (1, "found a model for binary-class; try opal");
+          my_errx (1, "found a model for binary-class; try opal");
 #endif
         mem_pool <sv_t> pool;
         pool.read (reader, &_lm, &_fm, true);
@@ -1550,7 +1561,7 @@ namespace opal {
       // write weight vectors
       FILE* writer = std::fopen (mfn, "w");
       if (! writer)
-        errx (1, "cannot write the model: %s", mfn);
+        my_errx (1, "cannot write the model: %s", mfn);
       char buf[BUF_SIZE]; std::setvbuf (writer, &buf[0], _IOFBF, BUF_SIZE);
       if (_opt.kernel == LINEAR) { // linear training
 #ifdef USE_MULTICLASS
