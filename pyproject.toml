@@ -20,10 +20,23 @@ line-length = 140
 name = "jdepp"
 #version = "0.1.0"
 
+authors = [
+    {name = "Syoyo Fujita", email = "syoyo@lighttransport.com"},
+]
+description = "Python binding for J.DepP(C++ implementation of Japanese Dependency Parsers)"
+
+
+
 # Use setuptools_scm
 dynamic = ["version"]
 
 readme = {file = "README.md", content-type = "text/markdown"}
+
+# Project URLs in pyproject.toml is not mature.
+# so write it to setup.py
+# https://github.com/pypa/packaging-problems/issues/606
+#
+# [project.urils]
 
 
 [project.scripts]

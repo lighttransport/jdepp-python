@@ -16,9 +16,10 @@ Licensed under 3-clause BSD license.
 
 ### Releasing
 
-* bump version in `setup.py`
-* tag it: `git tag vX.Y.`
+* tag it: `git tag vX.Y.Z`
 * push tag: `git push --tags`
+
+Versioning is automatically done through `setuptools_scm`
 
 ## License
 

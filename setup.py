@@ -31,6 +31,7 @@ ext_modules = [
 setup(
     name="jdepp",
     packages=['jdepp'],
+    url="https://github.com/lighttransport/jdepp-python/"
     ext_modules=ext_modules,
     long_description=open("./README.md", 'r', encoding='utf8').read(),
     long_description_content_type='text/markdown',
