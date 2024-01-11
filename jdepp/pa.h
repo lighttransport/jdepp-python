@@ -6,7 +6,7 @@
 
 //#include <getopt.h>
 #include <stdint.h>
-#include <err.h>
+//#include <err.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstdarg>
@@ -19,6 +19,8 @@
 #include <algorithm>
 #include <numeric>
 #include <iterator>
+
+#include "io-util.hh"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -238,7 +240,7 @@ namespace opal {
     if ((line = fgetln (fp, &read)) == NULL) return false;
 #else
     static ssize_t read_ = 0; static size_t size = 0; // static helps inlining
-    if ((read_ = getline (&line, &size, fp)) == -1) return false;
+    if ((read_ = ioutil::my_getline (fp, line, size)) == -1) return false;
     read = read_;
 #endif
     *(line + read - 1) = '\0';
@@ -439,7 +441,7 @@ namespace opal {
         my_errx (1, "%s", "unknown learning algorithm [-l].");
       if (buffer != RAM && buffer != DISK && buffer != null)
         my_errx (1, "%s", "unknown buffering method [-b].");
-      if (iter == 0) errx (1, "# iterations [-i] must be >= 1.");
+      if (iter == 0) my_errx (1, "%s", "# iterations [-i] must be >= 1.");
       if (C != 1.0 && (algo == P || algo == PA))
         my_warnx ("%s", "NOTE: reg-cost C [-c] is ignored in P [-l 0] and PA [-l 1].");
       if (kernel == LINEAR) {
@@ -470,15 +472,15 @@ namespace opal {
         if (std::strcmp (model, "-") != 0) mode = DUMP;
         else
 #endif
-          errx (1, "specify at least training or test file.");
+          my_errx (1, "%s", "specify at least training or test file.");
       }
       else if (std::strcmp (test,  "-") == 0) mode = TRAIN;
       else if (std::strcmp (train, "-") == 0) mode = TEST;
       else                                    mode = BOTH;
       if (std::strcmp (model, "-") == 0 && mode != BOTH)
-        errx (1, "instant mode needs both train/test files.");
+        my_errx (1, "%s", "instant mode needs both train/test files.");
       if (mode == TRAIN && output == 1)
-        errx (1, "per-iteration testing requires test file.");
+        my_errx (1, "%s", "per-iteration testing requires test file.");
       const char* mode0 [] = {"BOTH", "TRAIN", "TEST", "DUMP" };
       std::fprintf (stderr, "mode: %s\n", mode0[mode]);
     }
@@ -513,7 +515,7 @@ namespace opal {
     }
     label_t get_id (const char* ys) const {
       l2i_t::const_iterator it = _l2i.find (ys);
-      if (it == _l2i.end ()) errx (1, "unknown label: %s", ys);
+      if (it == _l2i.end ()) my_errx (1, "unknown label: %s", ys);
       return it->second;
     }
     const char* get_label (const size_t i) const { return _sbag[i]; }
@@ -874,7 +876,7 @@ namespace opal {
       std::fclose (fp);
     }
     virtual void assign  (const elem_t*, const size_t) {}
-    virtual void shuffle () { warnx ("WARNING: use rand_shuf for shuffling."); }
+    virtual void shuffle () { my_warnx ("%s", "WARNING: use rand_shuf for shuffling."); }
     virtual const data_t* body () const { return 0; }
     virtual const char*   curr () const { return 0; }
   protected:
@@ -1214,9 +1216,9 @@ namespace opal {
 #ifdef _OPENMP
       if (_opt.nthr) {
         if (_opt.kernel == POLY)
-          warnx ("WARNING: parallel training is avelable for linear kernel [-t 0].");
+          my_warnx ("%s", "WARNING: parallel training is avelable for linear kernel [-t 0].");
         else if (_opt.buffer != RAM)
-          warnx ("WARNING: parallel training needs buffeirng examples [-b 0].");
+          my_warnx ("%s", "WARNING: parallel training needs buffeirng examples [-b 0].");
       }
 #endif
 #ifdef USE_MULTICLASS
@@ -1396,12 +1398,12 @@ namespace opal {
       if (output >= 4 &&
           std::fpclassify (_sigmoid_A + 1.0) == FP_ZERO &&
           std::fpclassify (_sigmoid_B) == FP_ZERO)
-        warnx ("WARNING: you may have forgotten to set [-P] in training.");
+        my_warnx ("%s", "WARNING: you may have forgotten to set [-P] in training.");
 #endif
       for (const typename Pool::elem_t* x = pool.init (); x; x = pool.get ()) {
 #ifdef USE_MULTICLASS
         if (_opt.nclass < _lm.nclass ())
-          warnx ("WARNING: found a label unseen in training.");
+          my_warnx ("%s", "WARNING: found a label unseen in training.");
 #endif
         TIMER (_timer->startTimer ());
         if (_opt.kernel == LINEAR) _getMargin     (_m, x->begin (), x->end ());
