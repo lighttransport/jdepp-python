@@ -4,6 +4,11 @@
 #ifndef OPAL_PA_H
 #define OPAL_PA_H
 
+#if defined(_MSC_VER)
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#endif
+
 //#include <getopt.h>
 #include <stdint.h>
 //#include <err.h>
@@ -19,6 +24,7 @@
 #include <algorithm>
 #include <numeric>
 #include <iterator>
+#include <functional>
 
 #include "io-util.hh"
 
@@ -186,8 +192,8 @@ static struct optparse_long opal_long_opts[] = {
   {0}
 };
 
-extern char* optarg;
-extern int   optind;
+//extern char* optarg;
+//extern int   optind;
 
 namespace opal {
   // global type alias
@@ -250,8 +256,8 @@ namespace opal {
     const int64_t  ret  = static_cast <int64_t>  (std::strtoll  (p, q, 10));
     const uint64_t retu = static_cast <uint64_t> (std::strtoull (p, q, 10));
     if (std::numeric_limits <T>::is_specialized &&
-        (ret  < static_cast <int64_t>  (std::numeric_limits <T>::min ()) ||
-         retu > static_cast <uint64_t> (std::numeric_limits <T>::max ())))
+        (ret  < static_cast <int64_t>  ((std::numeric_limits <T>::min) ()) ||
+         retu > static_cast <uint64_t> ((std::numeric_limits <T>::max) ())))
       my_errx (1, "overflow: %s", p);
     return static_cast <T> (ret);
   }
@@ -383,7 +389,7 @@ namespace opal {
     { set (argc, argv); }
     void set (int argc, char** argv) { // getOpt
       if (argc == 0) return;
-      optind = 1;
+      int optind = 1;
       int id = 0;
       struct optparse options;
       optparse_init(&options, argv);
@@ -392,49 +398,49 @@ namespace opal {
         if (opt == -1) break;
         char* err = NULL;
         switch (opt) {
-          case 't': kernel  = strton <kernel_t> (optarg, &err); break;
-          case 'd': d       = strton <uint>     (optarg, &err); break;
+          case 't': kernel  = strton <kernel_t> (options.optarg, &err); break;
+          case 'd': d       = strton <uint>     (options.optarg, &err); break;
 #ifndef USE_POLYK
           case 'p': pruning = true; break;
           case 'k': slicing = true; break;
 #endif
           case 'o': output  = 0x100;
-          case 'O': output  |= strton <uint16_t> (optarg, &err); break;
+          case 'O': output  |= strton <uint16_t> (options.optarg, &err); break;
             // training params
-          case 'l': algo    = strton <algo_t>   (optarg, &err); break;
-          case 'c': C       = strtof (optarg, &err); break;
-          case 'i': iter    = strton <uint>     (optarg, &err); break;
+          case 'l': algo    = strton <algo_t>   (options.optarg, &err); break;
+          case 'c': C       = strtof (options.optarg, &err); break;
+          case 'i': iter    = strton <uint>     (options.optarg, &err); break;
           case 'a': average = true; break;
           case 's': shuffle = true; break;
 #ifndef USE_MULTICLASS
           case 'P': prob    = true; break;
 #endif
-          case 'b': buffer  = strton <buffer_t> (optarg, &err); break;
-          case 'n': nthr    = strton <uint>   (optarg, &err);   break;
-          case 'M': M       = strton <size_t> (optarg, &err);   break;
+          case 'b': buffer  = strton <buffer_t> (options.optarg, &err); break;
+          case 'n': nthr    = strton <uint>   (options.optarg, &err);   break;
+          case 'M': M       = strton <size_t> (options.optarg, &err);   break;
             // misc
           case 'h': printCredit (); printHelp (); std::exit (0);
           case  0 :
             if      (std::strcmp (opal_long_opts[id].longname, "kernel-splitN") == 0)
-              splitN = strton <uint> (optarg, &err);
+              splitN = strton <uint> (options.optarg, &err);
             else if (std::strcmp (opal_long_opts[id].longname, "max-trie-size") == 0)
-              trieT = strton <uint> (optarg, &err) << 20;
+              trieT = strton <uint> (options.optarg, &err) << 20;
             else if (std::strcmp (opal_long_opts[id].longname, "feat-threshold") == 0)
-              featT = strton <uint> (optarg, &err);
+              featT = strton <uint> (options.optarg, &err);
             else if (std::strcmp (opal_long_opts[id].longname, "model0") == 0)
-              model0  = optarg;
+              model0  = options.optarg;
 #ifdef USE_MULTICLASS
             else if (std::strcmp (opal_long_opts[id].longname, "num-classes") == 0)
-              nclass  = strton <uint> (optarg, &err);
+              nclass  = strton <uint> (options.optarg, &err);
 #endif
             break;
           default:  printCredit (); std::exit (0);
         }
         if (err && *err)
-          my_errx (1, "unrecognized option value: %s", optarg);
+          my_errx (1, "unrecognized option value: %s", options.optarg);
       }
       // errors & warnings
-      if (! trieT) trieT = std::numeric_limits <uint>::max ();
+      if (! trieT) trieT = (std::numeric_limits <uint>::max) ();
       if (kernel != POLY && kernel != LINEAR)
         my_errx (1, "%s", "unknown kernel fucntion [-t].");
       if (algo != P && algo != PA && algo != PA1 && algo != PA2)
@@ -455,7 +461,7 @@ namespace opal {
         }
       }
       if (! splitN) // enable shrinkage
-        shrink = true, splitN = std::numeric_limits <uint>::max ();
+        shrink = true, splitN = (std::numeric_limits <uint>::max) ();
       if (std::strcmp (com, "--") == 0) return;
       if (argc < optind + 3) {
         printCredit ();
@@ -727,7 +733,7 @@ namespace opal {
         int64_t fn = 0;
         for (; *p >= '0' && *p <= '9'; ++p) {
           fn *= 10, fn += *p, fn -= '0';
-          if (fn > std::numeric_limits <uint>::max ())
+          if (fn > (std::numeric_limits <uint>::max) ())
             my_errx (1, "overflow: %s", ex);
         }
         if (*p != ':') my_errx (1, "illegal feature index: %s", ex);
@@ -1045,7 +1051,7 @@ namespace opal {
   class Model {
   public:
     Model (const opal::option& opt) :
-      _opt (opt), _MIN_N (_opt.shrink ? 1U << PSEUDO_TRIE_N[_opt.d] : _opt.splitN + 1), _COMMON_BITS (std::min (_MIN_N, COMMON_BIT_UNIT * COMMON_FACTOR)), _lm (), _fm (_opt.featT), _nex (0), _nsv (0), _nf (0), _s (), _m0 (),  _bias (), _f2ss (), _fv2s (), _fbit (), _fbits (), _alpha (), _sv (), _w (), _wa (),
+      _opt (opt), _MIN_N (_opt.shrink ? 1U << PSEUDO_TRIE_N[_opt.d] : _opt.splitN + 1), _COMMON_BITS ((std::min) (_MIN_N, COMMON_BIT_UNIT * COMMON_FACTOR)), _lm (), _fm (_opt.featT), _nex (0), _nsv (0), _nf (0), _s (), _m0 (),  _bias (), _f2ss (), _fv2s (), _fbit (), _fbits (), _alpha (), _sv (), _w (), _wa (),
 #ifdef USE_POLYK
       _dot (),
 #endif
@@ -1100,7 +1106,7 @@ namespace opal {
     //
 #ifdef USE_ARRAY_TRIE
     void init_weight_trie () {
-      const uint N = std::min ((1U << PSEUDO_TRIE_N[_opt.d]) - 1, _opt.splitN);
+      const uint N = (std::min) ((1U << PSEUDO_TRIE_N[_opt.d]) - 1, _opt.splitN);
       switch (_opt.d) {
         case 1: _w.resize (N, _m0);                   break;
         case 2: _w.resize (N * (N + 1) / 2, _m0);     break;
@@ -1258,7 +1264,7 @@ namespace opal {
 #ifdef USE_MULTICLASS
           model[i].init_weight (_opt.nclass);
 #endif
-          pool_[i].assign (&data[offset], std::min (nex, data.size () - offset));
+          pool_[i].assign (&data[offset], (std::min) (nex, data.size () - offset));
         }
       }
 #endif
@@ -1530,7 +1536,7 @@ namespace opal {
             } else {
               _opt.d = d;
               _MIN_N = _opt.shrink ? 1U << PSEUDO_TRIE_N[_opt.d] : _opt.splitN + 1;
-              _COMMON_BITS = std::min (_MIN_N, COMMON_BIT_UNIT * COMMON_FACTOR);
+              _COMMON_BITS = (std::min) (_MIN_N, COMMON_BIT_UNIT * COMMON_FACTOR);
 
             }
 #ifdef USE_ARRAY_TRIE
@@ -1638,9 +1644,9 @@ namespace opal {
             dump_feature (_w[i], &i);
       } else {
         dump_feature (_bias);
-        const uint N = std::min ((1U << PSEUDO_TRIE_N[_opt.d]) - 1, _opt.splitN);
+        const uint N = (std::min) ((1U << PSEUDO_TRIE_N[_opt.d]) - 1, _opt.splitN);
         uint f[MAX_KERNEL_DEGREE];
-        for (uint i = 1; i <= std::min (N, _nf); ++i) {
+        for (uint i = 1; i <= (std::min) (N, _nf); ++i) {
           size_t p[MAX_KERNEL_DEGREE];
           f[0] = _fm.fi2fn (i);
           p[0] = _opt.d == 1 ? i - 1 :
@@ -1772,8 +1778,8 @@ namespace opal {
       typedef std::pair <const sv_t*, w_t>  data_t;
       uint  t;  // # updates
       ring () : t (0), _max (0), _M () {}
-      size_t max  () const { return _max; }
-      size_t size () const { return std::min (max (), _M.size ()); }
+      size_t maxval  () const { return _max; }
+      size_t size () const { return (std::min) (maxval (), _M.size ()); }
       const data_t& operator[] (const size_t i) const { return _M[i]; }
       std::vector <data_t>::const_reverse_iterator rbegin () const
       { return _M.rbegin (); }
@@ -1952,7 +1958,7 @@ namespace opal {
 #ifdef USE_TEMPORAL_PRUNING
         if (_opt.pruning) _tpn.push_back (pn_t (_m0));
 #endif
-        if (projected && ss.max () < _limk[i])
+        if (projected && ss.maxval () < _limk[i])
           ss.set_max (static_cast <uint> (_limk[i]));
       }
       tpm_t* const l = &_tpm[static_cast <uint> (n)];
@@ -2003,7 +2009,7 @@ namespace opal {
       for (p->pos = p->neg = 0;; *(p - 1) = *p, --p) {
         _pn = _f2pn[*--it];
         const size_t max_dot // max inner product between common features
-          = std::min (_polyk.size () - 1, static_cast <size_t> (it - first));
+          = (std::min) (_polyk.size () - 1, static_cast <size_t> (it - first));
 #ifdef USE_TEMPORAL_PRUNING
         const size_t index = static_cast <size_t> (p - &_bound[0]);
         if (index < _pfv.size ()) { // tighter bounds
@@ -2042,7 +2048,7 @@ namespace opal {
       const uint* it  = first;
       const uint* rit = std::upper_bound (first, last, _opt.splitN);
 #ifdef USE_ARRAY_TRIE
-      const uint  N   = std::min ((1U << PSEUDO_TRIE_N[_opt.d]) - 1, _opt.splitN);
+      const uint  N   = (std::min) ((1U << PSEUDO_TRIE_N[_opt.d]) - 1, _opt.splitN);
       for (; it != rit && *it <= N; ++it) {
         size_t p[MAX_KERNEL_DEGREE];
         switch (_opt.d) {
@@ -2099,7 +2105,7 @@ namespace opal {
       w_t _pm (0), _pm1 (0), _pm2 (0), _pm3 (0);
 #endif
 #ifdef USE_ARRAY_TRIE
-      const uint N = std::min ((1U << PSEUDO_TRIE_N[_opt.d]) - 1, _opt.splitN);
+      const uint N = (std::min) ((1U << PSEUDO_TRIE_N[_opt.d]) - 1, _opt.splitN);
 #endif
       std::fill (&_fbits[0], &_fbits[COMMON_FACTOR], 0);
       const uint* it = first;
@@ -2221,7 +2227,7 @@ namespace opal {
           // compute margin
           for (uint j = 0; j < _opt.nclass; ++j)
             if (j != y) {
-              const fl_t lj = std::max (fl_t (0), fl_t (1) - (_m[y] - _m[j]));
+              const fl_t lj = (std::max) (fl_t (0), fl_t (1) - (_m[y] - _m[j]));
               if (lj > 0) _ls.push_back (loss_t::value_type (lj, j));
             }
           // examine support class
@@ -2232,7 +2238,7 @@ namespace opal {
             switch (_opt.algo) {
               case P:   break;
               case PA:  is_sc &= l < (k + 1) * _ls[k].first; break;
-              case PA1: is_sc &= l < std::min (k * _ls[k].first + _opt.C * x.getNorm (), static_cast <double> ((k + 1) * _ls[k].first)); break;
+              case PA1: is_sc &= l < (std::min) (k * _ls[k].first + _opt.C * x.getNorm (), static_cast <double> ((k + 1) * _ls[k].first)); break;
               case PA2: is_sc &= l < ((k + 1) * x.getNorm () + k / (2 * _opt.C)) / (x.getNorm () + 1 / (2 * _opt.C)) * _ls[k].first; break;
             }
             if (! is_sc) { _ls.resize (k); break; }
@@ -2242,13 +2248,13 @@ namespace opal {
           switch (_opt.algo) {
             case P:   break;
             case PA:  penalty = l / (k + 1); break;
-            case PA1: penalty = std::max (l / k - _opt.C * x.getNorm () / k, static_cast <double> (l / (k + 1))); break;
+            case PA1: penalty = (std::max) (l / k - _opt.C * x.getNorm () / k, static_cast <double> (l / (k + 1))); break;
             case PA2: penalty = (x.getNorm () + 1 / (2 * _opt.C)) / ((k + 1) * x.getNorm () + (k / (2 * _opt.C))) * l; break;
           }
           t = fl_t (0);
           for (loss_t::iterator it = _ls.begin (); it != _ls.end (); ++it) {
             const fl_t t_ =
-              static_cast <fl_t> (std::max (0.0, it->first - penalty) / x.getNorm ());
+              static_cast <fl_t> ((std::max) (0.0, it->first - penalty) / x.getNorm ());
             t[y] += t_, t[it->second] -= t_;
           }
         }
@@ -2261,7 +2267,7 @@ namespace opal {
         switch (_opt.algo) {
           case P:   break;
           case PA:  t *= (1 - _m) / x.getNorm (); break;
-          case PA1: t *= std::min (_opt.C, (1 - _m) / x.getNorm ()); break;
+          case PA1: t *= (std::min) (_opt.C, (1 - _m) / x.getNorm ()); break;
           case PA2: t *= (1 - _m) / (x.getNorm () + 1 / (2 * _opt.C)); break;
         }
         if (_opt.kernel == LINEAR) _addTo (x, t); else _pushTo (x, t);

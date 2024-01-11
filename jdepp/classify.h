@@ -120,8 +120,8 @@ static struct optparse_long pecco_long_options[] = {
   {0}
 };
 
-extern char* optarg;
-extern int    optind;
+//extern char* optarg;
+//extern int    optind;
 #endif
 
 namespace pecco {
@@ -160,7 +160,7 @@ namespace pecco {
     }
     void set (int argc, char ** argv) { // optparse
       if (argc == 0) return;
-      optind = 1;
+      int optind = 1;
       size_t minsup_ = 1;
       double sigma_ (0.0), fratio_ (0.0);
 
@@ -172,29 +172,29 @@ namespace pecco {
         if (opt == -1) break;
         char* err = NULL;
         switch (opt) {
-          case 't': algo   = strton <algo_t>   (optarg, &err); break;
+          case 't': algo   = strton <algo_t>   (options.optarg, &err); break;
           case 'o': output = 0x100;
-          case 'O': output |= strton <int> (optarg, &err); break;
-          case 'e': train  = optarg; break;
-          case 'f': event  = optarg; break;
-          case 'm': minsup = optarg; minsup_ = strton <size_t> (optarg, &err); break;
+          case 'O': output |= strton <int> (options.optarg, &err); break;
+          case 'e': train  = options.optarg; break;
+          case 'f': event  = options.optarg; break;
+          case 'm': minsup = options.optarg; minsup_ = strton <size_t> (options.optarg, &err); break;
 #ifdef USE_FLOAT
-          case 's': sigma  = optarg; sigma_  = std::strtod (optarg, &err); break;
-          case 'r': fratio = optarg; fratio_ = std::strtod (optarg, &err); break;
+          case 's': sigma  = options.optarg; sigma_  = std::strtod (options.optarg, &err); break;
+          case 'r': fratio = options.optarg; fratio_ = std::strtod (options.optarg, &err); break;
 #else
-          case 's': sigma  = optarg; sigma_  = std::strtod (optarg, &err); break;
-          case 'r': fratio = optarg; fratio_ = std::strtod (optarg, &err); break;
+          case 's': sigma  = options.optarg; sigma_  = std::strtod (options.optarg, &err); break;
+          case 'r': fratio = options.optarg; fratio_ = std::strtod (options.optarg, &err); break;
 #endif
-          case 'p': pmsize = strton <size_t>  (optarg, &err); break;
-          case 'i': fst_factor  = strton <uint8_t> (optarg, &err); break;
+          case 'p': pmsize = strton <size_t>  (options.optarg, &err); break;
+          case 'i': fst_factor  = strton <uint8_t> (options.optarg, &err); break;
           case 'b': fst_verbose = true; break;
           case 'c': force       = true; break;
-          case 'v': verbose     = strton <uint8_t> (optarg, &err); break;
+          case 'v': verbose     = strton <uint8_t> (options.optarg, &err); break;
           case 'h': printCredit (); printHelp (); std::exit (0);
           default:  printCredit (); std::exit (0);
         }
         if (err && *err)
-          my_errx (1, "unrecognized option value: %s", optarg);
+          my_errx (1, "unrecognized option value: %s", options.optarg);
       }
       // errors & warnings
 #ifdef USE_CEDAR

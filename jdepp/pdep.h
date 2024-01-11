@@ -221,8 +221,8 @@ static struct optparse_long maxent_long_options[] = {
 };
 #endif
 
-extern char* optarg;
-extern int   optind;
+//extern char* optarg;
+//extern int   optind;
 #endif
 
 // raw strings for utf8
@@ -352,7 +352,7 @@ namespace pdep {
       learner_argv (0), chunk_argv (0), depnd_argv (0), learner_argc (0), chunk_argc (0), depnd_argc (0), verbose (0), ignore (0), ignore_len (0), utf8 (true) {
       // getOpt
       if (argc == 0) return;
-      optind = 1;
+      int optind = 1;
       struct optparse options;
       optparse_init(&options, argv);
       while (1) {
@@ -360,34 +360,34 @@ namespace pdep {
         if (opt == -1) break;
         char* err = NULL;
         switch (opt) {
-          case 't': mode      = strton <process_t> (optarg, &err);   break;
-          case 'e': utf8      = std::strtol (optarg, &err, 10) == 0; break;
-          case 'i': ignore    = optarg; ignore_len = std::strlen (ignore); break;
-          case 'c': train     = optarg; break;
-          case 'm': model_dir = optarg; break;
-          case 'p': parser    = strton <parser_t>  (optarg, &err); break;
-          case 'I': input     = strton <input_t>   (optarg, &err); break;
+          case 't': mode      = strton <process_t> (options.optarg, &err);   break;
+          case 'e': utf8      = std::strtol (options.optarg, &err, 10) == 0; break;
+          case 'i': ignore    = options.optarg; ignore_len = std::strlen (ignore); break;
+          case 'c': train     = options.optarg; break;
+          case 'm': model_dir = options.optarg; break;
+          case 'p': parser    = strton <parser_t>  (options.optarg, &err); break;
+          case 'I': input     = strton <input_t>   (options.optarg, &err); break;
           case 'b':
             do {
-              const ny::uint depth = strton <ny::uint> (optarg, &optarg);
+              const ny::uint depth = strton <ny::uint> (options.optarg, &options.optarg);
               cbits |= 1 << (depth - 1);
-              clen = std::max (clen, depth);
-            } while (*optarg++ != '\0');
+              clen = (std::max) (clen, depth);
+            } while (*options.optarg++ != '\0');
             break;
             // training parameters
-          case 'l': learner   = strton <learner_t> (optarg, &err); break;
-          case 'n': max_sent  = strton <ny::uint> (optarg, &err);  break;
+          case 'l': learner   = strton <learner_t> (options.optarg, &err); break;
+          case 'n': max_sent  = strton <ny::uint> (options.optarg, &err);  break;
             // misc
 #ifdef USE_AS_STANDALONE
           case 'd': mecab_dic = optarg; break;
 #endif
-          case 'x': xcode     = strton <ny::uint> (optarg, &err); break;
-          case 'v': verbose   = strton <int> (optarg, &err);      break;
+          case 'x': xcode     = strton <ny::uint> (options.optarg, &err); break;
+          case 'v': verbose   = strton <int> (options.optarg, &err);      break;
           case 'h': printCredit (); printHelp (); std::exit (0);
           default:  printCredit (); std::exit (0);
         }
         if (err && *err)
-          my_errx (1, "unrecognized option value: %s", optarg);
+          my_errx (1, "unrecognized option value: %s", options.optarg);
       }
       // print xcode
       if (xcode) { // xcode
@@ -430,6 +430,9 @@ namespace pdep {
 #if 1
     void _set_library_options (int& i, const int argc, char** argv,
                                int& largc, char**& largv) {
+
+      int &optind = i; // `i` is acutually the reference to `optind` though
+
       if (i < argc) {
         if (std::strcmp (argv[optind], "--") == 0) { // library options
           largv = &argv[optind];
@@ -466,9 +469,9 @@ namespace pdep {
         if (opt == -1) break;
         char* err = NULL;
         switch (opt) {
-          case 'd': degree   = strton <ny::uint> (optarg, &err);      break;
-          case 'l': algo     = strton <maxent_algo_t> (optarg, &err); break;
-          case 'c': reg_cost = std::strtod (optarg, &err); break;
+          case 'd': degree   = strton <ny::uint> (options.optarg, &err);      break;
+          case 'l': algo     = strton <maxent_algo_t> (options.optarg, &err); break;
+          case 'c': reg_cost = std::strtod (options.optarg, &err); break;
           case 'h': printHelp (); std::exit (0); break;
           default:  std::exit (0);
         }
