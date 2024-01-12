@@ -32,6 +32,11 @@ For a while, you can train a model by using standalone C++ jdepp app.
 
 Versioning is automatically done through `setuptools_scm`
 
+## TODO
+
+- [ ] WASM build
+- [ ] Training API support
+      
 ## License
 
 jdepp-python is licensed under 2-Clause BSD license.
