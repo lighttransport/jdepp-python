@@ -15,11 +15,19 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_executable(${EXE_TARGET}
   cpp_cli/jdepp-app.cc
   jdepp/classify.cc
+  jdepp/classify.h
   jdepp/kernel.cc
+  jdepp/kernel.h
   jdepp/linear.cc
+  jdepp/linear.h
   jdepp/pdep.cc
-  #jdepp/pdep.cc
-  jdepp/io-util.cc)
+  jdepp/pdep.h
+  jdepp/pecco.h
+  jdepp/pa.h
+  jdepp/cedar.h
+  jdepp/io-util.cc
+  jdepp/io-util.hh
+  )
 
 target_include_directories(${EXE_TARGET} PRIVATE jdepp)
 
