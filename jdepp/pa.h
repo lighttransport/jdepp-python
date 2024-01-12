@@ -400,7 +400,6 @@ namespace opal {
         int opt = optparse_long (&options, opal_long_opts, &id);
         if (opt == -1) break;
         char* err = NULL;
-        printf("opt : %c\n", char(opt));
         switch (opt) {
           case 't': kernel  = strton <kernel_t> (options.optarg, &err); break;
           case 'd': d       = strton <uint>     (options.optarg, &err); break;

@@ -423,9 +423,6 @@ namespace pdep {
       if (std::strcmp (argv[options.optind - 1], "--") == 0) --options.optind;
 
 
-      for (int i = options.optind; i < argc; i++) {
-        printf("argv[%d] = %s\n", i, argv[i]);
-      }
       _set_library_options (options, argc, argv, learner_argc, learner_argv);
       // classifier options for bunsetsu chunker
       _set_library_options (options, argc, argv, chunk_argc, chunk_argv);
