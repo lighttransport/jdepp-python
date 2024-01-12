@@ -14,6 +14,17 @@ W.I.P.
 
 Licensed under 3-clause BSD license.
 
+## Build standalone C++ app + training a model
+
+If you just want to use J.DepP from cli(e.g. batch processing),
+you can build a standalone C++ app using CMake.
+
+We modified J.DepP source code to improve portablily(e.g. Ours works well on Windows)  
+
+Training a model from Python binding is also not yet supported.
+For a while, you can train a model by using standalone C++ jdepp app.
+
+
 ### Releasing
 
 * tag it: `git tag vX.Y.Z`
