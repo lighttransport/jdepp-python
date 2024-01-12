@@ -34,6 +34,9 @@ namespace pecco {
   template <> float  strton <float>  (const char* s, char** error)
   { return static_cast <float> (std::strtod (s, error)); }
 #endif
+
+  // On 32bit platform, size_t == uint
+#if (SIZE_MAX > (1 << 32))
   template <> ny::uint strton <ny::uint> (const char* s, char** error) {
     int64_t ret = 0;
     char* p = const_cast <char*> (s);
@@ -45,7 +48,10 @@ namespace pecco {
     if (error) *error = p;
     return static_cast <ny::uint> (ret);
   }
+
   template size_t    strton (const char*, char**);
+#endif
+
   template uint8_t   strton (const char*, char**);
   template algo_t    strton (const char*, char**);
   template int       strton (const char*, char**);
