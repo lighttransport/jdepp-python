@@ -4,9 +4,15 @@
 #ifndef OPAL_PA_H
 #define OPAL_PA_H
 
-#if defined(_MSC_VER)
-#include <BaseTsd.h>
-typedef SSIZE_T ssize_t;
+// HAVE_SSIZE_T : defined in pyconfig.h, so use it when compied this header as Python module
+#if defined(_MSC_VER) && !defined(HAVE_SSIZE_T)
+/* Define like size_t, omitting the "unsigned" */
+#ifdef _WIN64
+typedef __int64 ssize_t;
+#else
+typedef int ssize_t;
+#endif
+#define HAVE_SSIZE_T 1
 #endif
 
 //#include <getopt.h>
