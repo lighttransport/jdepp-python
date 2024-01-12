@@ -14,6 +14,7 @@ bool ReadWholeFile(std::vector<uint8_t> *out, std::string *err,
                    const std::string &filepath, size_t filesize_max,
                    void *userdata);
 
-size_t my_getline(FILE *fp, char *buf, size_t maxlen);
+// output: buf, size
+size_t my_getline(FILE *fp, char **buf, size_t *size);
 
 } // namespace ioutil

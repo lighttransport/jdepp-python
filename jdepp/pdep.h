@@ -36,15 +36,19 @@
 
 // default to juman POS tagger & MeCab as morpological analyzer
 #ifndef USE_JUMAN_POS
-#define USE_JUMAN_POS
+#define USE_JUMAN_POS 1
 #endif
 
 #ifndef USE_MECAB
-#define USE_MECAB
+#define USE_MECAB 1
 #endif
 
 #ifndef USE_OPAL
 #define USE_OPAL
+#endif
+
+#ifndef USE_FST_AS_DEFAULT
+#define USE_FST_AS_DEFAULT 1
 #endif
 
 #ifndef FEATURE_SEP
@@ -352,7 +356,7 @@ namespace pdep {
       learner_argv (0), chunk_argv (0), depnd_argv (0), learner_argc (0), chunk_argc (0), depnd_argc (0), verbose (0), ignore (0), ignore_len (0), utf8 (true) {
       // getOpt
       if (argc == 0) return;
-      int optind = 1;
+      //int optind = 1;
       struct optparse options;
       optparse_init(&options, argv);
       while (1) {
@@ -416,30 +420,33 @@ namespace pdep {
       if (input == CHUNK && parser != LINEAR)
         my_warnx ("%s", "NOTE: parsing algorithm [-p] is ignored in training a chunker.");
       // learner options
-      if (std::strcmp (argv[optind - 1], "--") == 0) --optind;
-      _set_library_options (optind, argc, argv, learner_argc, learner_argv);
+      if (std::strcmp (argv[options.optind - 1], "--") == 0) --options.optind;
+
+
+      for (int i = options.optind; i < argc; i++) {
+        printf("argv[%d] = %s\n", i, argv[i]);
+      }
+      _set_library_options (options, argc, argv, learner_argc, learner_argv);
       // classifier options for bunsetsu chunker
-      _set_library_options (optind, argc, argv, chunk_argc, chunk_argv);
+      _set_library_options (options, argc, argv, chunk_argc, chunk_argv);
       // classifier options for dependency parser
-      _set_library_options (optind, argc, argv, depnd_argc, depnd_argv);
+      _set_library_options (options, argc, argv, depnd_argc, depnd_argv);
     }
     void printCredit () { std::fprintf (stderr, JDEPP_COPYRIGHT, com); }
     void printHelp   () { std::fprintf (stderr, JDEPP_OPT0 JDEPP_OPT1 JDEPP_OPT_TRAIN JDEPP_OPT_TEST JDEPP_OPT_MISC); }
 #endif
   private:
 #if 1
-    void _set_library_options (int& i, const int argc, char** argv,
+    void _set_library_options (struct optparse &options, const int argc, char** argv,
                                int& largc, char**& largv) {
 
-      int &optind = i; // `i` is acutually the reference to `optind` though
-
-      if (i < argc) {
-        if (std::strcmp (argv[optind], "--") == 0) { // library options
-          largv = &argv[optind];
+      if (options.optind < argc) {
+        if (std::strcmp (argv[options.optind], "--") == 0) { // library options
+          largv = &argv[options.optind];
           largc = 1;
-          while (optind + largc < argc && std::strcmp (largv[largc], "--") != 0)
+          while (options.optind + largc < argc && std::strcmp (largv[largc], "--") != 0)
             ++largc;
-          i += largc;
+          options.optind += largc;
         } else {
           printCredit ();
           my_errx (1, "Type `%s --help' for option details.", com);
@@ -449,6 +456,7 @@ namespace pdep {
 #endif
   };
 #ifdef USE_MAXENT
+#error "TODO"
   enum maxent_algo_t { SGD, OWLQN, LBFGS }; // MaxEnt optimizer
   // wrapper option class for maxent
   struct maxent_option { // option handler

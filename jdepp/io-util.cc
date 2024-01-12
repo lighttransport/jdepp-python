@@ -199,33 +199,55 @@ bool ReadWholeFile(std::vector<uint8_t> *out, std::string *err,
 #endif
 }
 
-size_t my_getline(FILE *fp, char *buf, size_t maxlen) {
-  char *p = buf;
-  char *endp = buf + maxlen;
+#if 1
+size_t my_getline(FILE *fp, char **pout, size_t *szout) {
+
+  static char *buffer{nullptr};
+  const size_t maxlen = 1024ull * 1024ull; // Max 1MB per line
+
+  if (!buffer) {
+    // TODO: Add exit handler to free this buffer
+    buffer = reinterpret_cast<char *>(malloc(maxlen));
+  }
+
+  if (!buffer) {
+    fprintf(stderr, "my_getline: failed to alloc buffer.");
+    return EOF;
+  }
+
+  if (!buffer) {
+    fprintf(stderr, "my_getline: buf is nullptr.");
+    return EOF;
+  }
+
+  char *startp = buffer;
+  char *p = buffer;
+  char *endp = buffer + maxlen;
   int c;
 
   while (((c = getc(fp)) != EOF) && (p < endp)) {
     if (c == '\n') {
+      *p++ = c;
       break;
     }
 
     if (c == '\r') {
       if ((p + 1) >= endp) {
         // ends with '\r'
+        *p++ = '\n'; // convert to NL
         break;
       } else {
         // look next char
         char cnext = getc(fp);
-        if (cnext == EOF) {
-          break;
-        }
 
         if (cnext == '\n') {
           // '\r\n'
+          *p++ = '\n'; // convert to NL
           break;
         }
 
         ungetc(cnext, fp);
+        *p++ = '\n'; // convert to NL
         break;
       }
     }
@@ -234,7 +256,19 @@ size_t my_getline(FILE *fp, char *buf, size_t maxlen) {
 
   if (c == EOF) return EOF;
 
-  return p - buf; /* Return string length */
+  // result includes newline character.
+  
+  size_t size = p - buffer;
+  if (szout) {
+    (*szout) = size;
+  }
+
+  if (pout) {
+    (*pout) = startp;
+  }
+
+  return size;
 }
+#endif
 
 }  // namespace ioutil

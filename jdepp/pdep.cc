@@ -653,8 +653,10 @@ namespace pdep {
             if (*r == 'E' && *(r+1) == 'O' && *(r+2) == 'S' && *(r+3) == '\n') // to avoid using strncmp
               { q = r + 4; eos = true; break; }  // find EOS\n
             while (r != q_end && *r != '\n') ++r; // next line
-            if (*r == '\n') // set line length
-              pos.back ().second = r - pos.back ().first + 1;
+            if (r < q_end) {
+              if (*r == '\n') // set line length
+                pos.back ().second = r - pos.back ().first + 1;
+            }
           }
           if (! eos) { // premature input
             std::memmove (&buf[0], q, static_cast <size_t> (q_end - q));
