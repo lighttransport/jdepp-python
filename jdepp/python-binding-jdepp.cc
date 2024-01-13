@@ -8,6 +8,7 @@
 #include <mutex>
 #include <sstream>
 #include <thread>
+#include <vector>
 
 #define OPTPARSE_IMPLEMENTATION
 #include "optparse.h"
@@ -362,42 +363,64 @@ static LineInfoVector split_lines(const std::string &src,
 
 namespace pyjdepp {
 
+class PySentence
+{
+
+};
+
 class PyJdepp {
  public:
-  PyJdepp() : _model_loaded{false} {}
+  PyJdepp() {}
   PyJdepp(const std::string &model_path)
       : _model_path(model_path)  {
     load_model(_model_path);
   }
 
   bool load_model(const std::string &model_path) {
-#if 0 // TODO
-    if (_model_loaded) {
-      // discard previous model&instance.
-      delete _tagger;
 
-      _tagger = new jdepp::tagger();
+    //
+    // Curently we must set all parameters in options as (argc, argv), then construct parser.
+    //
+
+    _argv_str.push_back("pyjdepp");
+    _argv_str.push_back("-m");
+    _argv_str.push_back(model_path);
+
+    setup_argv();
+
+    pdep::option options(int(_argv.size()), _argv.data());
+
+    if (_parser && _parser->model_loaded()) {
+      // discard previous model&instance.
+      delete _parser;
     }
 
-    if (_tagger->read_model(model_path)) {
-      _model_loaded = true;
-      _model_path = model_path;
-      //py::print("Model loaded:", model_path);
-    } else {
-      _model_loaded = false;
+    _parser = new pdep::parser(options);
+
+    if (!_parser->model_loaded()) {
       py::print("Model load failed:", model_path);
     }
-#endif
 
-    return _model_loaded;
+    return _parser->model_loaded();
   }
+
+  bool parse_from_postagged();
 
 
  private:
+  void setup_argv() {
+    _argv.clear();
+    for (auto v : _argv_str) {
+      _argv.push_back(const_cast<char *>(v.c_str()));
+    }
+  }
+
   uint32_t _nthreads{0};  // 0 = use all cores
   std::string _model_path;
-  //jdepp::tagger *_tagger{nullptr};
-  bool _model_loaded{false};
+  pdep::parser *_parser{nullptr};
+
+  std::vector<char *> _argv;
+  std::vector<std::string> _argv_str;
 };
 
 }  // namespace pyjdepp
@@ -409,5 +432,7 @@ PYBIND11_MODULE(jdepp_ext, m) {
   // world(defined in `jdepp/__init__.py`)
   py::class_<pyjdepp::PyJdepp>(m, "JdeppExt")
       .def(py::init<>())
+      //.def(py::init<std::string>())
+      .def("load_model", &pyjdepp::PyJdepp::load_model)
       ;
 }

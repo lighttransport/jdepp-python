@@ -1,19 +1,49 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(EXE_TARGET "jdepp")
+set(PY_TARGET "jdepp_ext")
 project(${EXE_TARGET} CXX)
+
+option(JDEPP_WITH_PYTHON "Build Python module(For developer)." On)
+option(
+    JDEPP_PREFER_LOCAL_PYTHON_INSTALLATION
+    "Prefer locally-installed Python interpreter than system or conda/brew installed Python. Please specify your Python interpreter with `Python3_EXECUTABLE` cmake option if you enable this option."
+    OFF)
+
 
 # cmake modules
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/sanitizers)
 find_package(Sanitizers) # Address sanitizer (-DSANITIZE_ADDRESS=ON)
 
+# Build standalone .so(for developer)
+if (JDEPP_WITH_PYTHON)
+
+  if(JDEPP_PREFER_LOCAL_PYTHON_INSTALLATION)
+    #message(STATUS "Local Python")
+    set(Python3_FIND_FRAMEWORK NEVER) # Do not search framework python
+    set(Python3_FIND_STRATEGY LOCATION)
+    set(Python3_FIND_REGISTRY NEVER) # Windows only
+  else()
+    set(Python3_FIND_FRAMEWORK LAST
+    )# Prefer Brew/Conda to Apple framework python
+  endif()
+
+  find_package(
+    Python3
+    COMPONENTS Interpreter Development
+    REQUIRED)
+
+  find_package(pybind11 CONFIG)
+
+endif()
+
+
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_executable(${EXE_TARGET}
-  cpp_cli/jdepp-app.cc
+set(JDEPP_SOURCES
   jdepp/classify.cc
   jdepp/classify.h
   jdepp/kernel.cc
@@ -28,12 +58,18 @@ add_executable(${EXE_TARGET}
   jdepp/io-util.cc
   jdepp/io-util.hh
   )
+
+add_executable(${EXE_TARGET}
+  cpp_cli/jdepp-app.cc
+  ${JDEPP_SOURCES})
 add_sanitizers(${EXE_TARGET})
 
 target_include_directories(${EXE_TARGET} PRIVATE jdepp)
 
-#target_compile_definitions(${EXE_TARGET} PRIVATE "NUM_POS_FIELD=4")
-#target_compile_definitions(${EXE_TARGET} PRIVATE "USE_JUMANDIC=1")
+if (JDEPP_WITH_PYTHON)
+  # pybind11 method:
+  pybind11_add_module(${PY_TARGET} jdepp/python-binding-jdepp.cc ${JDEPP_SOURCES})
+endif()
 
 # [VisualStudio]
 if(WIN32)

@@ -38,10 +38,27 @@ T.B.W.
 If you just want to use J.DepP from cli(e.g. batch processing),
 you can build a standalone C++ app using CMake.
 
-We modified J.DepP source code to improve portablily(e.g. Ours works well on Windows)  
+We modified J.DepP source code to improve portablily(e.g. Ours works well on Windows)
 
 Training a model from Python binding is also not yet supported.
 For a while, you can train a model by using standalone C++ jdepp app.
+
+### Standalone python module(For developer)
+
+This is for developer usecase.
+Use setup.py(pyproject.toml) to build python module for end users.
+
+Install pybind11 devkit.
+
+```
+$ python -m pip install pybind11
+```
+
+Then invoke cmake with `-DJDEPP_WITH_PYTHON` and `pybind11_DIR`
+
+```
+$ pybind11_DIR=/path/to/pybind11 cmake -DJDEPP_WITH_PYTHON=1 ...
+```
 
 
 ### Releasing
@@ -55,7 +72,9 @@ Versioning is automatically done through `setuptools_scm`
 
 - [ ] WASM build
 - [ ] Training API support
-      
+- [ ] Integrate jagger POS tagger as builtin(standalone) POS tagger in J.DepP
+  - https://github.com/lighttransport/jagger-python
+
 ## License
 
 jdepp-python is licensed under 2-Clause BSD license.

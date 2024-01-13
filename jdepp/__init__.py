@@ -21,3 +21,8 @@ class Jdepp:
         self._jdepp.load_model(str(dict_path))
 
 
+    def parse(self):
+        pass
+        # self._jdepp
+
+

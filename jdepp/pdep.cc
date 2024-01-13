@@ -16,6 +16,7 @@ typedef int ssize_t;
 
 
 
+#include "io-util.hh"
 #include "pdep.h"
 
 namespace pdep {
@@ -819,13 +820,18 @@ namespace pdep {
       my_errx (1, "# fields is less than %d.", NUM_FIELD);
 #endif
   }
+
+  bool parser::load_model() {
+    return _set_token_dict(/* do on-the-fly train */false);
+  }
+
   // morphological dictionary are extracted from the training data
-  void parser::_set_token_dict () {
+  bool parser::_set_token_dict (bool on_the_fly_train) {
     if (_opt.verbose > 0) std::fprintf (stderr, "Loading dict..");
     std::string dict (_opt.model_dir);
     dict += _opt.utf8 ? "/dic.utf8" : "/dic.euc";
-    struct stat st;
-    if (stat (dict.c_str (), &st) != 0) {
+    //struct stat st;
+    if (!ioutil::FileExists(dict) && on_the_fly_train) {
       if (_opt.verbose > 0)
         std::fprintf (stderr, "not found; reading %s..", _opt.train);
       sbag_t              sbag;
@@ -892,6 +898,9 @@ namespace pdep {
           std::fprintf (stderr, "no %s observed in the training data\n", it->first);
     }
     _dict = new dict_t (dict.c_str (), _opt.utf8);
+    if (_dict->valid()) {
+      return false;
+    }
     if (_opt.verbose > 0)
       std::fprintf (stderr, "done. (# strings + 1 (unseen) = %d).\n",
                     _dict->num_lexical_features ());

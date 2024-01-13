@@ -1,4 +1,4 @@
-﻿/// J.DepP -- Japanese Dependency Parsers
+/// J.DepP -- Japanese Dependency Parsers
 //  $Id: pdep.h 1943 2022-03-17 17:48:45Z ynaga $
 // Copyright (c) 2008-2015 Naoki Yoshinaga <ynaga@tkl.iis.u-tokyo.ac.jp>
 //
@@ -497,16 +497,22 @@ namespace pdep {
   typedef std::map <const char*, ny::uint, ny::pless <char> > sbag_t;
   class dict_base_t : private ny::Uncopyable {
   private:
-    char*     _data_ptr;
+    char*     _data_ptr{nullptr};
     ny::trie  _data;
     ny::uint  _num_particle_features;
     ny::uint  _num_lexical_features;
   protected:
-    dict_base_t (const char* fn) : _data_ptr (0), _data (), _num_particle_features (0), _num_lexical_features (0) {
+    dict_base_t (const char* fn) : _data_ptr{nullptr}, _data (), _num_particle_features (0), _num_lexical_features (0) {
       FILE* fp = std::fopen (fn, "rb");
+      if (!fp) {
+        std::fprintf(stderr, "dict not found or failed to read: %s\n", fn);
+        return;
+      }
       if (std::fread (&_num_particle_features, sizeof (ny::uint), 1, fp) != 1 ||
-          std::fread (&_num_lexical_features,  sizeof (ny::uint), 1, fp) != 1)
-        my_errx (1, "broken dic: delete %s", fn);
+          std::fread (&_num_lexical_features,  sizeof (ny::uint), 1, fp) != 1) {
+        std::fprintf(stderr, "J.DepP: dict is broken: %s\n", fn);
+        return;
+      }
       ++_num_lexical_features; // reserve room for unseen feature
       long offset = std::ftell (fp);
       std::fseek (fp, 0, SEEK_END);
@@ -520,6 +526,7 @@ namespace pdep {
     }
     ~dict_base_t () { delete [] _data_ptr; }
   public:
+    bool valid() const { return _data_ptr ? true : false; };
     int lookup (const char* key) const { return lookup (key, std::strlen (key)); }
     int lookup (const char* key, const size_t len) const {
       int n = _data.exactMatchSearch <ny::trie::result_type> (key, len);
@@ -1025,7 +1032,7 @@ namespace pdep {
     void _event_gen_from_tuple (const int i);
     void _event_gen_from_tuple (const int i, const int j);
     void _event_gen_from_tuple (const int i, const int j, const int k);
-    void _set_token_dict ();
+    bool _set_token_dict (bool on_the_fly_train = true);
     void _register_token (char* cs, const size_t& len, sbag_t& sbag,
                           std::set <ny::uint>& particle_feature_ids);
     void _learn ();
@@ -1082,6 +1089,9 @@ namespace pdep {
 #endif
       if (_s) { _s->clear (); delete _s; }
     }
+    // for Python binding.
+    bool load_model(); // Use model filename in _opt.
+    bool model_loaded() { return _dict && _dict->valid(); };
     // interface
     void init ();
     void run  ();
