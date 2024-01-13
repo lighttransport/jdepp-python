@@ -2,13 +2,18 @@
 //  $Id: pdep.cc 1944 2022-03-17 17:50:39Z ynaga $
 // Copyright (c) 2008-2015 Naoki Yoshinaga <ynaga@tkl.iis.u-tokyo.ac.jp>
 
-#if defined(_MSC_VER)
-#ifndef WIN32_LEAN_AND_MEAN      
-#define WIN32_LEAN_AND_MEAN
+// HAVE_SSIZE_T : defined in pyconfig.h, so use it when compied this header as
+// Python module
+#if defined(_MSC_VER) && !defined(HAVE_SSIZE_T)
+/* Define like size_t, omitting the "unsigned" */
+#ifdef _WIN64
+typedef __int64 ssize_t;
+#else
+typedef int ssize_t;
 #endif
-#include <windows.h>
-typedef SSIZE_T ssize_t;
+#define HAVE_SSIZE_T 1
 #endif
+
 
 
 #include "pdep.h"
@@ -648,8 +653,10 @@ namespace pdep {
             if (*r == 'E' && *(r+1) == 'O' && *(r+2) == 'S' && *(r+3) == '\n') // to avoid using strncmp
               { q = r + 4; eos = true; break; }  // find EOS\n
             while (r != q_end && *r != '\n') ++r; // next line
-            if (*r == '\n') // set line length
-              pos.back ().second = r - pos.back ().first + 1;
+            if (r < q_end) {
+              if (*r == '\n') // set line length
+                pos.back ().second = r - pos.back ().first + 1;
+            }
           }
           if (! eos) { // premature input
             std::memmove (&buf[0], q, static_cast <size_t> (q_end - q));

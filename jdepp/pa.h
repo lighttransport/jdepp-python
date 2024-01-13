@@ -4,9 +4,15 @@
 #ifndef OPAL_PA_H
 #define OPAL_PA_H
 
-#if defined(_MSC_VER)
-#include <BaseTsd.h>
-typedef SSIZE_T ssize_t;
+// HAVE_SSIZE_T : defined in pyconfig.h, so use it when compied this header as Python module
+#if defined(_MSC_VER) && !defined(HAVE_SSIZE_T)
+/* Define like size_t, omitting the "unsigned" */
+#ifdef _WIN64
+typedef __int64 ssize_t;
+#else
+typedef int ssize_t;
+#endif
+#define HAVE_SSIZE_T 1
 #endif
 
 //#include <getopt.h>
@@ -167,8 +173,8 @@ static struct optparse_long opal_long_opts[] = {
   {"kernel-degree",      'd', OPTPARSE_REQUIRED},
   {"kernel-splitN",       0 , OPTPARSE_REQUIRED},
   {"max-trie-size",       0 , OPTPARSE_REQUIRED},
-  {"kernel-slicing",     'k', OPTPARSE_REQUIRED},
-  {"pruning-margin",     'p', OPTPARSE_REQUIRED},
+  {"kernel-slicing",     'k', OPTPARSE_NONE},
+  {"pruning-margin",     'p', OPTPARSE_NONE},
   {"output",             'O', OPTPARSE_REQUIRED},
   {"output!",            'o', OPTPARSE_REQUIRED},
   {"learner",            'l', OPTPARSE_REQUIRED},
@@ -183,7 +189,7 @@ static struct optparse_long opal_long_opts[] = {
 #ifdef USE_MULTICLASS
   {"num-classes",         0 , OPTPARSE_REQUIRED},
 #else
-  {"probability-output", 'P', OPTPARSE_REQUIRED},
+  {"probability-output", 'P', OPTPARSE_NONE},
 #endif
 #ifdef _OPENMP
   {"num-threads",        'n', OPTPARSE_NONE},
@@ -192,8 +198,6 @@ static struct optparse_long opal_long_opts[] = {
   {0}
 };
 
-//extern char* optarg;
-//extern int   optind;
 
 namespace opal {
   // global type alias
@@ -246,7 +250,7 @@ namespace opal {
     if ((line = fgetln (fp, &read)) == NULL) return false;
 #else
     static ssize_t read_ = 0; static size_t size = 0; // static helps inlining
-    if ((read_ = ioutil::my_getline (fp, line, size)) == -1) return false;
+    if ((read_ = ioutil::my_getline (fp, &line, &size)) == -1) return false;
     read = read_;
 #endif
     *(line + read - 1) = '\0';
@@ -389,7 +393,6 @@ namespace opal {
     { set (argc, argv); }
     void set (int argc, char** argv) { // getOpt
       if (argc == 0) return;
-      int optind = 1;
       int id = 0;
       struct optparse options;
       optparse_init(&options, argv);
@@ -463,13 +466,14 @@ namespace opal {
       if (! splitN) // enable shrinkage
         shrink = true, splitN = (std::numeric_limits <uint>::max) ();
       if (std::strcmp (com, "--") == 0) return;
-      if (argc < optind + 3) {
+      printf("argc = %d, options.optind + 3 %d\n", argc, options.optind);
+      if (argc < options.optind + 3) {
         printCredit ();
         my_errx (1, "Type `%s --help' for option details.", com);
       }
-      train = argv[optind];
-      model = argv[++optind];
-      test  = argv[++optind];
+      train = argv[options.optind];
+      model = argv[++options.optind];
+      test  = argv[++options.optind];
       setMode (); // induce appropriate mode
     }
     void setMode () {
@@ -924,7 +928,7 @@ namespace opal {
     { _data = data; _p = _data; _end = _data + M; }
     virtual ~mem_pool () {
       for (typename data_t::iterator it = _ex.begin (); it != _ex.end (); ++it)
-        delete it->getBody ();
+        delete[] it->getBody ();
     }
     elem_t* init_impl () { // for parallel training
       if (! _data) { _data = &_ex[0]; _end = _data + _ex.size (); }

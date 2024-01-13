@@ -155,6 +155,7 @@ namespace ny {
     bool operator () (const Key* a, const Key* b) const
     { return pless <T> () (a->key, b->key); }
   };
+#if 1
   // getline wrapper
   static inline bool getLine (FILE*& fp, char*& line, size_t& read) {
 #if 0
@@ -167,14 +168,16 @@ namespace ny {
 #endif
 
 #else
-    const size_t maxlen = 1024ull*1024ull*1024ull; // 1GB
-    read = ioutil::my_getline(fp, line, maxlen);
-    if (read == size_t(-1)) {
+    size_t read_ = 0; size_t size = 0;
+    read_ = ioutil::my_getline(fp, &line, &size);
+    if (read_ == size_t(-1)) {
       return false;
     }
+    read = read_;
 #endif
     *(line + read - 1) = '\0';
     return true;
   }
+#endif
 }
 #endif /* TYPEDEF_H */

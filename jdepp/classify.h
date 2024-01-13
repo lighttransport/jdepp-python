@@ -120,8 +120,6 @@ static struct optparse_long pecco_long_options[] = {
   {0}
 };
 
-//extern char* optarg;
-//extern int    optind;
 #endif
 
 namespace pecco {
@@ -160,7 +158,6 @@ namespace pecco {
     }
     void set (int argc, char ** argv) { // optparse
       if (argc == 0) return;
-      int optind = 1;
       size_t minsup_ = 1;
       double sigma_ (0.0), fratio_ (0.0);
 
@@ -212,7 +209,7 @@ namespace pecco {
           my_errx (1, "%s", "SPLIT ratio [-r] must be 0 in PKI [-t 0].");
       }
       if (std::strcmp (argv[0], "--") == 0) return; // skip
-      if (argc < optind + 1) {
+      if (argc < options.optind + 1) {
         printCredit ();
         my_errx (1, "Type `%s --help' for option details.", com);
       }
@@ -220,7 +217,7 @@ namespace pecco {
       if (fst_verbose)
         my_errx (1, "%s", "[-b] building multiple FSTs are useless since model suffix disabled.");
 #endif
-      model = argv[optind];
+      model = argv[options.optind];
       setType ();
       if (type == LINEAR) {
         if (algo == PKI)
@@ -240,7 +237,7 @@ namespace pecco {
 #endif
       if (algo == FST && std::strcmp (event, "") == 0)
         my_errx (1, "%s", "FST [-t 2] requires possible examples [-f];\n (you can use the training examples)");
-      if (++optind != argc) test = argv[optind];
+      if (++options.optind != argc) test = argv[options.optind];
     }
 #endif
     void setType () {
