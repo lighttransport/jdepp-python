@@ -8,11 +8,30 @@ W.I.P.
 
 ## Build configuration
 
-* Classifier: 2ndPolyFST
+* MeCab style POS format: `FEATURE_SEP ','`
 
-## Precompiled KNBC dictionary
+## Precompiled model files
 
-Licensed under 3-clause BSD license.
+You can get precompiled model files(MeCab POS tagging + train with KNBC copus) from
+
+https://github.com/lighttransport/jdepp-python/releases/tag/v0.1.0
+
+Model file is licensed under 3-clause BSD license.
+
+## Example
+
+Download precompiled model file.
+
+```
+$ wget https://github.com/lighttransport/jdepp-python/releases/download/v0.1.0/knbc-mecab-jumandic-2ndpoly.tar.gz
+$ tar xvf knbc-mecab-jumandic-2ndpoly.tar.gz
+```
+
+```py
+import jdepp
+
+T.B.W.
+```
 
 ### Releasing
 
@@ -28,6 +47,6 @@ J.DepP is licensed under GPLv2/LGPLv2.1/BSD triple license.
 
 ## Thrird party license
 
-* paco, cedar: GPLv2/LGPLv2.1/BSD triple license. We choose BSD license.
+* pacco, cedar, opal(subcompoennts of J.DepP): GPLv2/LGPLv2.1/BSD triple license. We choose BSD license.
 * io-util: MIT license.
 * optparse: Unlicense https://github.com/skeeto/optparse
