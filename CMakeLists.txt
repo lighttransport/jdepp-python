@@ -28,6 +28,7 @@ add_executable(${EXE_TARGET}
   jdepp/io-util.cc
   jdepp/io-util.hh
   )
+add_sanitizers(${EXE_TARGET})
 
 target_include_directories(${EXE_TARGET} PRIVATE jdepp)
 
