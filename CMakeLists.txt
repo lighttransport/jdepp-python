@@ -69,6 +69,16 @@ target_include_directories(${EXE_TARGET} PRIVATE jdepp)
 if (JDEPP_WITH_PYTHON)
   # pybind11 method:
   pybind11_add_module(${PY_TARGET} jdepp/python-binding-jdepp.cc ${JDEPP_SOURCES})
+
+  # copy .so to jdepp/
+  add_custom_command(
+    TARGET ${PY_TARGET}
+    POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E copy "$<TARGET_FILE:${PY_TARGET}>"
+            "${CMAKE_SOURCE_DIR}/jdepp/$<TARGET_FILE_NAME:${PY_TARGET}>"
+    COMMENT "copying jdepp python module file to jdepp/"
+    VERBATIM)
+
 endif()
 
 # [VisualStudio]

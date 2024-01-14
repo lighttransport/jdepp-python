@@ -905,6 +905,8 @@ namespace pdep {
       std::fprintf (stderr, "done. (# strings + 1 (unseen) = %d).\n",
                     _dict->num_lexical_features ());
     _particle_feature_bits.resize (_dict->particle_feature_bit_len (), 0);
+
+    return true;
   }
   void parser::_setup_learner () {
     switch (_opt.learner) { // they should be newed earlier
