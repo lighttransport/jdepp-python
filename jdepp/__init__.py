@@ -1,4 +1,4 @@
-from jdepp_ext import *
+from .jdepp_ext import *
 
 # load setptools_scm generated _version.py
 try:
@@ -20,9 +20,11 @@ class Jdepp:
     def load_model(self, dict_path: Path):
         self._jdepp.load_model(str(dict_path))
 
+    def parse_from_postagged(self, input_postagged: str):
+        self._jdepp.parse_from_postagged(input_postagged)
 
-    def parse(self):
-        pass
-        # self._jdepp
+    # for internal debugging. 
+    def _run(self):
+        self._jdepp.run()
 
 

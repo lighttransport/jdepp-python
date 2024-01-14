@@ -23,6 +23,7 @@
 #include <map>
 #include <stack>
 #include <list>
+#include <iostream>
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -309,6 +310,7 @@ namespace pdep {
   // The command-line arguments will override the following default parameters
   class option { // option handler
   public:
+    bool valid{false};
     const char* com, *train, *model_dir;
     //
     mutable learner_t  learner;
@@ -390,8 +392,10 @@ namespace pdep {
           case 'h': printCredit (); printHelp (); std::exit (0);
           default:  printCredit (); std::exit (0);
         }
-        if (err && *err)
-          my_errx (1, "unrecognized option value: %s", options.optarg);
+        if (err && *err) {
+          fprintf (stderr, "unrecognized option value: %s\n", options.optarg);
+          return;
+        }
       }
       // print xcode
       if (xcode) { // xcode
@@ -401,24 +405,37 @@ namespace pdep {
         std::fprintf (stderr, "\n");
       }
       // errors & warnings
-      if (learner != OPAL && learner != SVM && learner != MAXENT)
-        my_errx (1, "%s", "unknown learner [-l].");
-      if (mode != LEARN && mode != PARSE && mode != BOTH && mode != CACHE)
-        my_errx (1, "%s","unknown running mode [-t].");
+      if (learner != OPAL && learner != SVM && learner != MAXENT) {
+        fprintf (stderr, "%s", "unknown learner [-l].\n");
+        return;
+      }
+      if (mode != LEARN && mode != PARSE && mode != BOTH && mode != CACHE) {
+        fprintf (stderr, "%s","unknown running mode [-t].\n");
+        return;
+      }
       if (parser != LINEAR && parser != CHUNKING && parser != BACKWARD &&
-          parser != TOURNAMENT)
-        my_errx (1, "%s","unknown parsing algorithm [-p].");
-      if (input != RAW && input != CHUNK && input != DEPND)
-        my_errx (1, "%s","unknown input format [-I].");
-      struct stat st;
-      if (stat (model_dir, &st) != 0)
-        my_errx (1, "no such directory: %s [-m]", model_dir);
+          parser != TOURNAMENT) {
+        fprintf (stderr, "%s","unknown parsing algorithm [-p].\n");
+        return;
+      }
+      if (input != RAW && input != CHUNK && input != DEPND) {
+        fprintf (stderr, "%s","unknown input format [-I].\n");
+        return;
+      }
+      //struct stat st;
+      if (!ioutil::FileExists(model_dir)) {
+        fprintf (stderr, "no such directory: %s [-m]\n", model_dir);
+        return;
+      }
 #ifdef USE_AS_STANDALONE
-      if (input == RAW && mecab_dic && stat (mecab_dic, &st) != 0)
-        my_errx (1, "MeCab dict [-d]: no such file or directory: %s", mecab_dic);
+      if (input == RAW && mecab_dic && stat (mecab_dic, &st) != 0) {
+        fprintf (stderr, "MeCab dict [-d]: no such file or directory: %s\n", mecab_dic);
+        return;
+      }
 #endif
-      if (input == CHUNK && parser != LINEAR)
-        my_warnx ("%s", "NOTE: parsing algorithm [-p] is ignored in training a chunker.");
+      if (input == CHUNK && parser != LINEAR) {
+        my_warnx ("%s", "NOTE: parsing algorithm [-p] is ignored in training a chunker.\n");
+      }
       // learner options
       if (std::strcmp (argv[options.optind - 1], "--") == 0) --options.optind;
 
@@ -428,6 +445,8 @@ namespace pdep {
       _set_library_options (options, argc, argv, chunk_argc, chunk_argv);
       // classifier options for dependency parser
       _set_library_options (options, argc, argv, depnd_argc, depnd_argv);
+
+      valid = true;
     }
     void printCredit () { std::fprintf (stderr, JDEPP_COPYRIGHT, com); }
     void printHelp   () { std::fprintf (stderr, JDEPP_OPT0 JDEPP_OPT1 JDEPP_OPT_TRAIN JDEPP_OPT_TEST JDEPP_OPT_MISC); }
@@ -1100,8 +1119,8 @@ namespace pdep {
     const sentence_t* parse       (const char* sent, size_t len = 0);
     const char*       parse_tostr (const char* sent, size_t len = 0);
 #endif
-    const sentence_t* parse_from_postagged       (char* result, size_t len = 0);
-    const char*       parse_from_postagged_tostr (char* result, size_t len = 0);
+    const sentence_t* parse_from_postagged       (const char* postagged, size_t len = 0);
+    const char*       parse_from_postagged_tostr (const char* postagged, size_t len = 0);
     const sentence_t* read_result (char* result, size_t len = 0);
   };
 }

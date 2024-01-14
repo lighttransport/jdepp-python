@@ -19,17 +19,31 @@
 #include "config.h"
 #endif
 
+#include <unordered_map>
+
 #include "io-util.hh"
 
 #ifndef USE_CEDAR
-#define USE_CEDAR
+#define USE_CEDAR 1
 #endif
 
-#if   defined (USE_HASH)
-#include <unordered_map>
-#elif defined (USE_TR1_HASH)
-#include <tr1/unordered_map>
+#ifndef USE_KERNEL
+#define USE_KERNEL 1
 #endif
+
+// Mecab format
+#ifndef USE_MECAB
+#define USE_MECAB 1
+#endif
+
+#ifndef USE_ARRAY_TRIE
+#define USE_ARRAY_TRIE 1
+#endif
+
+#ifndef USE_PRUNING
+#define USE_PRUNING 1
+#endif
+
 
 #if defined (USE_DARTS) || defined (USE_DARTS_CLONE)
 #include <darts.h>

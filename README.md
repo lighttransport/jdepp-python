@@ -9,6 +9,7 @@ W.I.P.
 ## Build configuration
 
 * MeCab style POS format: `FEATURE_SEP ','`
+* See `jdepp/typedf.h` for more info about ifdef macros.
 
 ## Precompiled model files
 
@@ -30,7 +31,57 @@ $ tar xvf knbc-mecab-jumandic-2ndpoly.tar.gz
 ```py
 import jdepp
 
-T.B.W.
+model_path = "model/knbc"
+
+parser.load_model(model_path)
+
+# NOTE: Mecab format: surface + TAB + feature(comma separated 7 fields)
+input_postagged = """吾輩	名詞,普通名詞,*,*,吾輩,わがはい,代表表記:我が輩/わがはい カテゴリ:人
+は	助詞,副助詞,*,*,は,は,*
+猫	名詞,普通名詞,*,*,猫,ねこ,*
+である	判定詞,*,判定詞,デアル列基本形,だ,である,*
+。	特殊,句点,*,*,。,。,*
+名前	名詞,普通名詞,*,*,名前,なまえ,*
+は	助詞,副助詞,*,*,は,は,*
+まだ	副詞,*,*,*,まだ,まだ,*
+ない	形容詞,*,イ形容詞アウオ段,基本形,ない,ない,*
+。	特殊,句点,*,*,。,。,*
+EOS
+"""
+
+parser.parse_from_postagged(input_postagged)
+```
+
+
+## POS tagged input format
+
+MeCab style. surface + TAB + feature(comma separated 7 fields)
+
+### With jagger
+
+You can use jagger-python for POS tagging.
+
+```
+import jagger
+import jdepp
+
+jagger_model_path = "model/kwdlc/patterns"
+tokenizer = jagger.Jagger()
+tokenizer.load_model(jagger_model_path)
+
+text = "吾輩は猫である。名前はまだない。"
+toks = tokenizer.tokenize(text)
+
+pos_tagged_input = "" 
+for tok in toks:
+    pos_tagged_input += tok.surface() + '\t' + tok.feature()
+pos_tagged_input += "EOS"
+
+
+jdepp_model_path = "model/knbc"
+parser.load_model(jdepp_model_path)
+
+parser.parse_from_postagged(pos_tagged_input)
 ```
 
 ## Build standalone C++ app + training a model

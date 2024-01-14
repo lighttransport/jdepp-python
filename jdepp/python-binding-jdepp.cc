@@ -9,6 +9,7 @@
 #include <sstream>
 #include <thread>
 #include <vector>
+#include <iostream>
 
 #define OPTPARSE_IMPLEMENTATION
 #include "optparse.h"
@@ -382,7 +383,10 @@ class PyJdepp {
     // Curently we must set all parameters in options as (argc, argv), then construct parser.
     //
 
+    std::cout << "model_path " << model_path << "\n";
     _argv_str.push_back("pyjdepp");
+    _argv_str.push_back("--verbose");
+    _argv_str.push_back("10");
     _argv_str.push_back("-m");
     _argv_str.push_back(model_path);
 
@@ -396,21 +400,41 @@ class PyJdepp {
     }
 
     _parser = new pdep::parser(options);
-
-    if (!_parser->model_loaded()) {
+    if (!_parser->load_model()) { // use setting in argv for model path
       py::print("Model load failed:", model_path);
+    } else {
+      py::print("Model load OK");
     }
-
+    
     return _parser->model_loaded();
   }
 
-  bool parse_from_postagged();
+  bool parse_from_postagged(const std::string &input_postagged) {
+    if (!_parser->model_loaded()) {
+      py::print("Model is not yet loaded.");
+      return false;
+    }
 
+    const char *ret = _parser->parse_from_postagged_tostr(input_postagged.c_str(), input_postagged.size());
+
+    if (ret) {
+      py::print("result: ", std::string(ret));
+      return true;
+    }
+
+    return false;
+  }
+
+
+  // for internal debugging
+  void run() {
+    _parser->run();
+  }
 
  private:
   void setup_argv() {
     _argv.clear();
-    for (auto v : _argv_str) {
+    for (auto &v : _argv_str) {
       _argv.push_back(const_cast<char *>(v.c_str()));
     }
   }
@@ -434,5 +458,7 @@ PYBIND11_MODULE(jdepp_ext, m) {
       .def(py::init<>())
       //.def(py::init<std::string>())
       .def("load_model", &pyjdepp::PyJdepp::load_model)
+      .def("parse_from_postagged", &pyjdepp::PyJdepp::parse_from_postagged)
+      //.def("run", &pyjdepp::PyJdepp::run)
       ;
 }

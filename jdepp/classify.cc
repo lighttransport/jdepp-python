@@ -497,7 +497,7 @@ namespace pecco {
       case 4:
         return _pkePseudoInnerLoop <4, PRUNE, FLAG> (score, it, beg, pend, 0) ||
           _pkeInnerLoop <4, PRUNE, FLAG> (score, pend, beg, end, 0);
-      default: my_errx (1, "please add case statement.");
+      default: my_errx (1, "%s", "please add case statement.");
     }
   }
 #else

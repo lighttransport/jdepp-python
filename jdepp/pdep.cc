@@ -510,14 +510,15 @@ namespace pdep {
   const char* parser::parse_tostr (const char* sent, size_t len)
   { return parse (sent, len)->print_tostr (_opt.input, _opt.verbose < 0); }
 #endif
-  const sentence_t* parser::parse_from_postagged (char* postagged, size_t len) {
+  const sentence_t* parser::parse_from_postagged (const char* postagged, size_t len) {
     _s->clear (true);
     if (! len) len = std::strlen (postagged);
     _s->set_topos (postagged, len);
     //
     char *r = _s->postagged () + len - 4;
-    if (len < 4 || *r != 'E' || *(r+1) != 'O' || *(r+2) != 'S' || *(r+3) != '\n')
-      my_errx (1, "%s", "found a tagged sentence that is not EOS-terminated.");
+    if (len < 4 || *r != 'E' || *(r+1) != 'O' || *(r+2) != 'S' || *(r+3) != '\n') {
+      fprintf(stderr, "%s", "found a tagged sentence that is not EOS-terminated.");
+    }
     for (char* p (_s->postagged ()), *q (p); p != r; p = ++q) {
       while (q != r && *q != '\n') ++q;
       if (! _opt.ignore || std::strncmp (p, _opt.ignore, _opt.ignore_len) != 0)
@@ -528,7 +529,7 @@ namespace pdep {
     _parse <PARSE> ();
     return _s;
   }
-  const char* parser::parse_from_postagged_tostr (char* postagged, size_t len)
+  const char* parser::parse_from_postagged_tostr (const char* postagged, size_t len)
   { return parse_from_postagged (postagged, len)->print_tostr (_opt.input, _opt.verbose < 0); }
   const sentence_t* parser::read_result (char* parsed, size_t len) {
     _s->clear (true);
@@ -654,10 +655,10 @@ namespace pdep {
             if (*r == 'E' && *(r+1) == 'O' && *(r+2) == 'S' && *(r+3) == '\n') // to avoid using strncmp
               { q = r + 4; eos = true; break; }  // find EOS\n
             while (r != q_end && *r != '\n') ++r; // next line
-            if (r < q_end) {
+            //if (r < q_end) {
               if (*r == '\n') // set line length
                 pos.back ().second = r - pos.back ().first + 1;
-            }
+            //}
           }
           if (! eos) { // premature input
             std::memmove (&buf[0], q, static_cast <size_t> (q_end - q));
@@ -822,7 +823,14 @@ namespace pdep {
   }
 
   bool parser::load_model() {
-    return _set_token_dict(/* do on-the-fly train */false);
+    if (!_set_token_dict(/* do on-the-fly train */false)) {
+      return false;
+    }
+    _setup_classifier (CHUNK, _opt.chunk_argc, _opt.chunk_argv);
+    _setup_classifier (DEPND, _opt.depnd_argc, _opt.depnd_argv);
+    create_sentence ();
+
+    return true;
   }
 
   // morphological dictionary are extracted from the training data
@@ -898,12 +906,14 @@ namespace pdep {
           std::fprintf (stderr, "no %s observed in the training data\n", it->first);
     }
     _dict = new dict_t (dict.c_str (), _opt.utf8);
-    if (_dict->valid()) {
+    if (!_dict->valid()) {
+      fprintf(stderr, "dict is not valid: %s\n", dict.c_str());
       return false;
     }
-    if (_opt.verbose > 0)
+    if (_opt.verbose > 0) {
       std::fprintf (stderr, "done. (# strings + 1 (unseen) = %d).\n",
                     _dict->num_lexical_features ());
+    }
     _particle_feature_bits.resize (_dict->particle_feature_bit_len (), 0);
 
     return true;
@@ -1074,15 +1084,21 @@ namespace pdep {
     }
     // parse, cache
     if (_opt.mode != LEARN) {
-      if (_opt.input != DEPND)
+      if (_opt.input != DEPND) {
+        std::cout << "CHUNK\n";
         _setup_classifier (CHUNK, _opt.chunk_argc, _opt.chunk_argv);
-      if (_opt.input != CHUNK)
+      }
+      if (_opt.input != CHUNK) {
+        std::cout << "DEPEND\n";
         _setup_classifier (DEPND, _opt.depnd_argc, _opt.depnd_argv);
+      }
       if (_opt.mode == CACHE) {
+        std::cout << "CACHE\n";
         if (_opt.learner == OPAL)
           my_errx (1, "%s", "needless to cache in opal classifier [-t 0].");
         _batch <CACHE> ();
       } else {
+        std::cout << "PARSE\n";
         _batch <PARSE> ();
         if (_opt.input == CHUNK) _chunk_stat.print ();
         if (_opt.input == DEPND) _depnd_stat.print ();
