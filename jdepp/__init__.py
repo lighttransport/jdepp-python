@@ -12,18 +12,21 @@ import os
 import sys
 from pathlib import Path
 
+from .jdepp_tools import *
+
+
 class Jdepp:
     def __init__(self):
 
         self._jdepp = JdeppExt()
 
     def load_model(self, dict_path: Path):
-        self._jdepp.load_model(str(dict_path))
+        return self._jdepp.load_model(str(dict_path))
 
     def parse_from_postagged(self, input_postagged: str):
-        self._jdepp.parse_from_postagged(input_postagged)
+        return self._jdepp.parse_from_postagged(input_postagged)
 
-    # for internal debugging. 
+    # for internal debugging.
     def _run(self):
         self._jdepp.run()
 

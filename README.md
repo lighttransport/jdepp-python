@@ -72,7 +72,7 @@ tokenizer.load_model(jagger_model_path)
 text = "吾輩は猫である。名前はまだない。"
 toks = tokenizer.tokenize(text)
 
-pos_tagged_input = "" 
+pos_tagged_input = ""
 for tok in toks:
     pos_tagged_input += tok.surface() + '\t' + tok.feature()
 pos_tagged_input += "EOS"
@@ -125,6 +125,7 @@ Versioning is automatically done through `setuptools_scm`
 - [ ] Training API support
 - [ ] Integrate jagger POS tagger as builtin(standalone) POS tagger in J.DepP
   - https://github.com/lighttransport/jagger-python
+- [ ] MMap(or SharedMemory) load of dict data to save memory in Python multiprocessing
 
 ## License
 

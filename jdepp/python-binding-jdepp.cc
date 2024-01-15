@@ -364,9 +364,67 @@ static LineInfoVector split_lines(const std::string &src,
 
 namespace pyjdepp {
 
+
+struct PyToken
+{
+  std::string surface;
+  std::string feature; // comma separated string
+};
+
+struct PyChunk
+{
+  int id{0};
+  int head_id{-1};
+  int head_id_gold{-1};
+  int head_id_cand{-1};
+  double depend_prob{0.0f};
+  char depend_type_gold{'D'};
+  char depend_type_cand{'D'};
+
+  void set_dependents(const std::vector<PyChunk> &chunks) {
+    _dependents = chunks;
+  }
+
+  const std::vector<PyChunk> &dependents() const {
+    return _dependents;
+  }
+
+  std::vector<PyChunk> _dependents;
+};
+
 class PySentence
 {
+ public:
+  PySentence() = default;
 
+  const std::string &str() const {
+    return _str;
+  }
+
+  void set_str(const std::string &s) {
+    _str = s;
+  }
+
+  const std::vector<PyToken> tokens() const {
+    return _tokens;
+  }
+
+  const std::vector<PyChunk> chunks() const {
+    return _chunks;
+  }
+
+  void set_chunks(const std::vector<PyChunk> &rhs) {
+    _chunks = rhs;
+  }
+
+  void set_chunks(std::vector<PyChunk> &&rhs) {
+    _chunks = rhs;
+  }
+
+ private:
+  std::string _str;
+  std::vector<PyToken> _tokens;
+  std::vector<PyChunk> _chunks;
 };
 
 class PyJdepp {
@@ -405,26 +463,70 @@ class PyJdepp {
     } else {
       py::print("Model load OK");
     }
-    
+
     return _parser->model_loaded();
   }
 
-  bool parse_from_postagged(const std::string &input_postagged) {
+  PySentence parse_from_postagged(const std::string &input_postagged) const {
     if (!_parser->model_loaded()) {
       py::print("Model is not yet loaded.");
-      return false;
+      return PySentence();
     }
 
-    const char *ret = _parser->parse_from_postagged_tostr(input_postagged.c_str(), input_postagged.size());
+    const pdep::sentence_t *sent = _parser->parse_from_postagged(input_postagged.c_str(), input_postagged.size());
 
-    if (ret) {
-      py::print("result: ", std::string(ret));
-      return true;
+    PySentence pysent;
+
+    // Create copy of string and chunk/token data
+    const char *str = sent->print_tostr(pdep::RAW, /* print_prob */false);
+    pysent.set_str(std::string(str));
+
+    std::vector<PyChunk> py_chunks;
+
+    const std::vector<const pdep::chunk_t *> chunks = sent->chunks();
+    for (size_t i = 0; i < chunks.size(); i++) {
+      const pdep::chunk_t *b = chunks[i];
+
+      const std::vector<const pdep::chunk_t *> deps = b->dependents();
+
+      std::vector<PyChunk> py_deps;
+
+      for (size_t k = 0; k < deps.size(); k++) {
+        PyChunk d;
+        d.id = deps[k]->id;
+        d.head_id = deps[k]->head_id;
+        d.head_id_gold = deps[k]->head_id_gold;
+        d.head_id_cand = deps[k]->head_id_cand;
+        d.depend_prob = deps[k]->depnd_prob;
+        d.depend_type_gold = deps[k]->depnd_type_gold;
+        d.depend_type_cand = deps[k]->depnd_type_cand;
+
+        py_deps.push_back(d);
+      }
+
+      PyChunk py_chunk;
+
+      py_chunk.id = b->id;
+      py_chunk.head_id = b->head_id;
+      py_chunk.head_id_gold = b->head_id_gold;
+      py_chunk.head_id_cand = b->head_id_cand;
+      py_chunk.depend_prob = b->depnd_prob;
+      py_chunk.depend_type_gold = b->depnd_type_gold;
+      py_chunk.depend_type_cand = b->depnd_type_cand;
+
+      py_chunk.set_dependents(py_deps);
+
+      py_chunks.push_back(py_chunk);
     }
 
-    return false;
+    pysent.set_chunks(std::move(py_chunks));
+
+    return pysent;
   }
 
+  bool model_loaded() const {
+    return (_parser && _parser->model_loaded());
+  }
 
   // for internal debugging
   void run() {
@@ -445,6 +547,8 @@ class PyJdepp {
 
   std::vector<char *> _argv;
   std::vector<std::string> _argv_str;
+
+  const pdep::sentence_t *_sentnce{nullptr};
 };
 
 }  // namespace pyjdepp
@@ -458,7 +562,20 @@ PYBIND11_MODULE(jdepp_ext, m) {
       .def(py::init<>())
       //.def(py::init<std::string>())
       .def("load_model", &pyjdepp::PyJdepp::load_model)
-      .def("parse_from_postagged", &pyjdepp::PyJdepp::parse_from_postagged)
+      .def("parse_from_postagged", [](const pyjdepp::PyJdepp &self, const std::string &str) {
+        //if (!self.model_loaded()) {
+        //  py::print("model not loaded.");
+        //  return py::object(py::cast(nullptr)); // None
+        //}
+        return self.parse_from_postagged(str);
+      })
       //.def("run", &pyjdepp::PyJdepp::run)
+      ;
+
+  py::class_<pyjdepp::PySentence>(m, "PySentence")
+      .def(py::init<>())
+      .def("str", &pyjdepp::PySentence::str)
+      .def("tokens", &pyjdepp::PySentence::tokens)
+      .def("chunks", &pyjdepp::PySentence::chunks)
       ;
 }

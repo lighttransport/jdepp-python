@@ -22,4 +22,7 @@ input_postagged = """吾輩	名詞,普通名詞,*,*,吾輩,わがはい,代表�
 EOS
 """
 
-parser.parse_from_postagged(input_postagged)
+sent = parser.parse_from_postagged(input_postagged)
+if sent:
+    print("sent")
+    print(sent.tostr());

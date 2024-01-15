@@ -990,25 +990,25 @@ namespace pdep {
   private:
     const option    _opt;
     pecco::option   _pecco_opt;
-    pecco::pecco*   _pecco;
-    pecco::pecco*   _pecco_chunk;
-    pecco::pecco*   _pecco_depnd;
+    pecco::pecco*   _pecco{nullptr};
+    pecco::pecco*   _pecco_chunk{nullptr};
+    pecco::pecco*   _pecco_depnd{nullptr};
 #ifdef USE_OPAL
     opal::option     _opal_opt;
-    opal::Model*     _opal;
+    opal::Model*     _opal{nullptr};
     opal::mem_pool <opal::ex_t> _ex_pool;
 #endif
 #ifdef USE_SVM
     TinySVM::Param  _tiny_param;
-    TinySVM::Model* _tinysvm;
+    TinySVM::Model* _tinysvm{nullptr};
 #endif
 #ifdef USE_MAXENT
     maxent_option   _maxent_opt;
-    ME_Model*       _libme;
+    ME_Model*       _libme{nullptr};
 #endif
     // variables to handle events
-    sentence_t*       _s;
-    dict_t*         _dict;
+    sentence_t*       _s{nullptr};
+    dict_t*         _dict{nullptr};
     flag_t          _particle_feature_bits;
     ny::fv_t        _fv; // feature vector of the example
     ny::uint        _fi; // offset of feature index
@@ -1016,7 +1016,7 @@ namespace pdep {
     depnd_stat      _depnd_stat;
     FILE*           _writer;
 #ifdef USE_AS_STANDALONE
-    MeCab::Tagger*  _tagger;
+    MeCab::Tagger*  _tagger{nullptr};
 #endif
     // parser specific variablts
     std::stack <int>       _stack;
@@ -1114,7 +1114,7 @@ namespace pdep {
     // interface
     void init ();
     void run  ();
-    void create_sentence () { _s = new sentence_t (); }
+    void create_sentence () { if (_s) { _s->clear(); delete _s; } _s = new sentence_t (); }
 #ifdef USE_AS_STANDALONE
     const sentence_t* parse       (const char* sent, size_t len = 0);
     const char*       parse_tostr (const char* sent, size_t len = 0);
