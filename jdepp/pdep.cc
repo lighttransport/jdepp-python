@@ -1085,20 +1085,16 @@ namespace pdep {
     // parse, cache
     if (_opt.mode != LEARN) {
       if (_opt.input != DEPND) {
-        std::cout << "CHUNK\n";
         _setup_classifier (CHUNK, _opt.chunk_argc, _opt.chunk_argv);
       }
       if (_opt.input != CHUNK) {
-        std::cout << "DEPEND\n";
         _setup_classifier (DEPND, _opt.depnd_argc, _opt.depnd_argv);
       }
       if (_opt.mode == CACHE) {
-        std::cout << "CACHE\n";
         if (_opt.learner == OPAL)
           my_errx (1, "%s", "needless to cache in opal classifier [-t 0].");
         _batch <CACHE> ();
       } else {
-        std::cout << "PARSE\n";
         _batch <PARSE> ();
         if (_opt.input == CHUNK) _chunk_stat.print ();
         if (_opt.input == DEPND) _depnd_stat.print ();

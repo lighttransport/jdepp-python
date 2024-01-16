@@ -364,11 +364,126 @@ static LineInfoVector split_lines(const std::string &src,
 
 namespace pyjdepp {
 
+namespace {
 
-struct PyToken
+// compute length of UTF8 character *p
+static inline int u8_len (const char *p) {
+  static const uint8_t u8bytes[256] = { // must be static to tame compilers
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2, 2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3, 4,4,4,4,4,4,4,4,5,5,5,5,6,6,6,6
+  };
+  return u8bytes[static_cast <uint8_t> (*p)];
+}
+
+// Support quoted string'\"' (do not consider `delimiter` character in quoted string)
+// delimiter must be a ASCII char.
+// quote_char must be a single UTF-8 char.
+inline std::vector<std::string> parse_feature(const char *p, const size_t len, const char delimiter = ',', const char *quote_char = "\"")
 {
-  std::string surface;
-  std::string feature; // comma separated string
+  std::vector<std::string> tokens;
+
+  if (len == 0) {
+    return tokens;
+  }
+
+  size_t quote_size = u8_len(quote_char);
+
+  bool in_quoted_string = false;
+  size_t s_start = 0;
+
+  const char *curr_p = p;
+
+  for (size_t i = 0; i < len; i += u8_len(curr_p)) {
+
+    curr_p = &p[i];
+
+    if (is_line_ending(p, i, len - 1)) {
+      break;
+    }
+
+    if ((i + quote_size) < len) {
+      if (memcmp(curr_p, quote_char, quote_size) == 0) {
+        in_quoted_string = !in_quoted_string;
+        continue;
+      }
+    }
+
+    if (!in_quoted_string && (p[i] == delimiter)) {
+      //std::cout << "s_start = " << s_start << ", (i-1) = " << i-1 << "\n";
+      //std::cout << "p[i] = " << p[i] << "\n";
+      if (s_start < i) {
+        std::string tok(p + s_start, i - s_start);
+
+        tokens.push_back(tok);
+      } else {
+        // Add empty string
+        tokens.push_back(std::string());
+      }
+
+      s_start = i + 1; // next to delimiter char
+    }
+  }
+
+  // the remainder
+  //std::cout << "remain: s_start = " << s_start << ", len - 1 = " << len-1 << "\n";
+
+  if (s_start <= (len - 1)) {
+    std::string tok(p + s_start, len - s_start);
+    tokens.push_back(tok);
+  }
+
+  return tokens;
+}
+
+} // namespace
+
+class PyToken
+{
+ public:
+  PyToken() = default;
+  PyToken(const std::string &surf, const std::string &feature) : _surface(surf), _feature(feature) {}
+
+  const std::string &surface() { return _surface; };
+  const std::string &feature() { return _feature; }
+
+  void set_separator(const char delim) {
+    _delim = delim;
+  }
+
+  void set_quote_char(const std::string &qc) {
+    _quote_char = qc;
+  }
+
+  const int n_tags() const {
+
+    if (_tags.empty()) {
+      // TODO: Specify separator at runtime.
+      _tags = parse_feature(_feature.c_str(), _feature.size(), _delim, _quote_char.c_str());
+    }
+    
+    return _tags.size();
+  }
+
+  const std::string tag(int idx) const {
+    if (idx < n_tags()) {
+      return _tags[idx];
+    } else {
+      return std::string();
+    }
+  }
+
+ private:
+  std::string _surface;
+  std::string _feature; // comma separated string
+  mutable std::vector<std::string> _tags;
+  char _delim = FEATURE_SEP; 
+  std::string _quote_char{"\""};
 };
 
 struct PyChunk
@@ -548,7 +663,6 @@ class PyJdepp {
   std::vector<char *> _argv;
   std::vector<std::string> _argv_str;
 
-  const pdep::sentence_t *_sentnce{nullptr};
 };
 
 }  // namespace pyjdepp
@@ -577,5 +691,18 @@ PYBIND11_MODULE(jdepp_ext, m) {
       .def("str", &pyjdepp::PySentence::str)
       .def("tokens", &pyjdepp::PySentence::tokens)
       .def("chunks", &pyjdepp::PySentence::chunks)
+      ;
+
+  py::class_<pyjdepp::PyToken>(m, "PyToken")
+      .def(py::init<>())
+      .def("surface", &pyjdepp::PyToken::surface)
+      .def("feature", &pyjdepp::PyToken::feature)
+      .def("n_tags", &pyjdepp::PyToken::n_tags)
+      .def("tag", &pyjdepp::PyToken::tag)
+      ;
+
+  py::class_<pyjdepp::PyChunk>(m, "PyChunk")
+      .def(py::init<>())
+      .def_readonly("head", &pyjdepp::PyChunk::head_id)
       ;
 }
