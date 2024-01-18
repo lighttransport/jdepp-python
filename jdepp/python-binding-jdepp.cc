@@ -450,12 +450,16 @@ class PyToken
   PyToken() = default;
   PyToken(const std::string &surf, const std::string &feature, const double prob = 0.0) : _surface(surf), _feature(feature), _chunk_start_probability(prob) {}
 
-  const std::string &surface() { return _surface; };
-  const std::string &feature() { return _feature; }
-  const double chunk_start_prob() { return _chunk_start_probability; }
+  const std::string &surface() const { return _surface; };
+  const std::string &feature() const { return _feature; }
+  const double chunk_start_prob() const { return _chunk_start_probability; }
 
-  void set_separator(const char delim) {
+  void set_feature_separator(const char delim) {
     _delim = delim;
+  }
+
+  void set_surface_end(const std::string &s) {
+    _separator = s;
   }
 
   void set_quote_char(const std::string &qc) {
@@ -480,11 +484,16 @@ class PyToken
     }
   }
 
+  const std::string str() const {
+    return _surface + _separator + _feature;
+  }
+
  private:
   std::string _surface;
   std::string _feature; // comma separated string
   double _chunk_start_probability{0.0};
   mutable std::vector<std::string> _tags;
+  std::string _separator{SURFACE_END};
   char _delim = FEATURE_SEP;
   std::string _quote_char{"\""};
 };
@@ -519,7 +528,17 @@ struct PyChunk
     return _tokens;
   }
 
-  const std::string str(bool prob = false) const {
+  // Chunk(Bunsetsu) string
+  // Simply concatenate token surfaces.
+  const std::string str() const {
+    std::string s;
+    for (const auto &tok : _tokens) {
+      s += tok.surface();
+    }
+    return s;
+  }
+
+  const std::string print(bool prob = false) const {
     std::stringstream ss;
 
     ss << "* " << id << " " << head_id << "D";
@@ -619,7 +638,9 @@ class PyJdepp {
 
     PySentence pysent;
 
-    // Create copy of string and chunk/token data
+    // We create copy for each chunk/token.
+    // This approach is redundunt and not memory-efficient,
+    // but this make Python binding easier(we don't need to consider lifetime of Python/C++ object)
     const char *str = sent->print_tostr(pdep::RAW, /* print_prob */false);
     pysent.set_str(std::string(str));
 
@@ -747,6 +768,8 @@ PYBIND11_MODULE(jdepp_ext, m) {
       .def("feature", &pyjdepp::PyToken::feature)
       .def("n_tags", &pyjdepp::PyToken::n_tags)
       .def("tag", &pyjdepp::PyToken::tag)
+      .def("str", &pyjdepp::PyToken::str)
+      .def("__repr__", &pyjdepp::PyToken::str)
       ;
 
   py::class_<pyjdepp::PyChunk>(m, "PyChunk")
@@ -756,7 +779,9 @@ PYBIND11_MODULE(jdepp_ext, m) {
       .def_readonly("head_id_cand", &pyjdepp::PyChunk::head_id_cand)
       .def_readonly("head_id_gold", &pyjdepp::PyChunk::head_id_gold)
       .def_readonly("depend_prob", &pyjdepp::PyChunk::depend_prob)
+      .def("tokens", &pyjdepp::PyChunk::tokens)
       .def("str", &pyjdepp::PyChunk::str)
-      .def("__repr__", [](const pyjdepp::PyChunk &self) { return self.str(); })
+      .def("print", &pyjdepp::PyChunk::print, "Print chunk(bunsetsu) string", py::arg("prob") = false)
+      .def("__repr__", [](const pyjdepp::PyChunk &self) { return self.print(); })
       ;
 }
