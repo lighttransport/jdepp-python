@@ -703,6 +703,10 @@ PYBIND11_MODULE(jdepp_ext, m) {
 
   py::class_<pyjdepp::PyChunk>(m, "PyChunk")
       .def(py::init<>())
-      .def_readonly("head", &pyjdepp::PyChunk::head_id)
+      .def_readonly("id", &pyjdepp::PyChunk::id)
+      .def_readonly("head_id", &pyjdepp::PyChunk::head_id)
+      .def_readonly("head_id_cand", &pyjdepp::PyChunk::head_id_cand)
+      .def_readonly("head_id_gold", &pyjdepp::PyChunk::head_id_gold)
+      .def_readonly("depend_prob", &pyjdepp::PyChunk::depend_prob)
       ;
 }
