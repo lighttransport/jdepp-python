@@ -44,3 +44,23 @@ def treeify (binfo):
             tree += "\n"
     return tree
 
+# Export as dot(graphviz)
+def dottify(graph_name: str = 'jdepp', label_name: str = 'dependency'):
+
+    s = ''
+
+    s += 'digraph ' + graph_name + '{\n'
+
+    s += '\ngraph [\n'
+    s += '  charset = "UTF-8";\n'
+    s += '  label = "{}";\n'.format(label_name)
+    s += '];\n'
+    s += '\n'
+
+    s += 'node [\n'
+
+    s += ']\n'
+
+    s += '}\n'
+
+    return s
