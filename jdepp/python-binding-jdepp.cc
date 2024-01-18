@@ -10,6 +10,7 @@
 #include <thread>
 #include <vector>
 #include <iostream>
+#include <sstream>
 
 #define OPTPARSE_IMPLEMENTATION
 #include "optparse.h"
@@ -447,10 +448,11 @@ class PyToken
 {
  public:
   PyToken() = default;
-  PyToken(const std::string &surf, const std::string &feature) : _surface(surf), _feature(feature) {}
+  PyToken(const std::string &surf, const std::string &feature, const double prob = 0.0) : _surface(surf), _feature(feature), _chunk_start_probability(prob) {}
 
   const std::string &surface() { return _surface; };
   const std::string &feature() { return _feature; }
+  const double chunk_start_prob() { return _chunk_start_probability; }
 
   void set_separator(const char delim) {
     _delim = delim;
@@ -466,7 +468,7 @@ class PyToken
       // TODO: Specify separator at runtime.
       _tags = parse_feature(_feature.c_str(), _feature.size(), _delim, _quote_char.c_str());
     }
-    
+
     return _tags.size();
   }
 
@@ -481,8 +483,9 @@ class PyToken
  private:
   std::string _surface;
   std::string _feature; // comma separated string
+  double _chunk_start_probability{0.0};
   mutable std::vector<std::string> _tags;
-  char _delim = FEATURE_SEP; 
+  char _delim = FEATURE_SEP;
   std::string _quote_char{"\""};
 };
 
@@ -500,11 +503,35 @@ struct PyChunk
     _dependents = chunks;
   }
 
+  void set_tokens(const std::vector<PyToken> &tokens) {
+    _tokens = tokens;
+  }
+
+  void set_tokens(std::vector<PyToken> &&tokens) {
+    _tokens = tokens;
+  }
+
   const std::vector<PyChunk> &dependents() const {
     return _dependents;
   }
 
+  const std::vector<PyToken> &tokens() const {
+    return _tokens;
+  }
+
+  const std::string str(bool prob = false) const {
+    std::stringstream ss;
+
+    ss << "* " << id << " " << head_id << "D";
+    if (prob) {
+      ss << "@" << depend_prob;
+    }
+
+    return ss.str();
+  }
+
   std::vector<PyChunk> _dependents;
+  std::vector<PyToken> _tokens;
 };
 
 class PySentence
@@ -616,6 +643,16 @@ class PyJdepp {
         d.depend_type_gold = deps[k]->depnd_type_gold;
         d.depend_type_cand = deps[k]->depnd_type_cand;
 
+        // Create copy of token info.
+        std::vector<PyToken> toks;
+        for (const pdep::token_t *m = deps[k]->mzero(); m <= deps[k]->mlast(); m++) {
+          std::string surface(m->surface, m->length);
+          PyToken py_tok(surface, m->feature, m->chunk_start_prob);
+
+          toks.push_back(py_tok);
+        }
+        d.set_tokens(toks);
+
         py_deps.push_back(d);
       }
 
@@ -630,6 +667,16 @@ class PyJdepp {
       py_chunk.depend_type_cand = b->depnd_type_cand;
 
       py_chunk.set_dependents(py_deps);
+
+      std::vector<PyToken> toks;
+      for (const pdep::token_t *m = b->mzero(); m <= b->mlast(); m++) {
+        std::string surface(m->surface, m->length);
+        PyToken py_tok(surface, m->feature, m->chunk_start_prob);
+
+        toks.push_back(py_tok);
+      }
+      py_chunk.set_tokens(toks);
+
 
       py_chunks.push_back(py_chunk);
     }
@@ -691,6 +738,7 @@ PYBIND11_MODULE(jdepp_ext, m) {
       .def("str", &pyjdepp::PySentence::str)
       .def("tokens", &pyjdepp::PySentence::tokens)
       .def("chunks", &pyjdepp::PySentence::chunks)
+      .def("__repr__", &pyjdepp::PySentence::str)
       ;
 
   py::class_<pyjdepp::PyToken>(m, "PyToken")
@@ -708,5 +756,7 @@ PYBIND11_MODULE(jdepp_ext, m) {
       .def_readonly("head_id_cand", &pyjdepp::PyChunk::head_id_cand)
       .def_readonly("head_id_gold", &pyjdepp::PyChunk::head_id_gold)
       .def_readonly("depend_prob", &pyjdepp::PyChunk::depend_prob)
+      .def("str", &pyjdepp::PyChunk::str)
+      .def("__repr__", [](const pyjdepp::PyChunk &self) { return self.str(); })
       ;
 }

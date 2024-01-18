@@ -2,9 +2,9 @@
 # Copyright: Naoki Yoshinaga <ynaga@tkl.iis.u-tokyo.ac.jp>
 # License: BSD/GPLv2/LGPLv2.1
 
-# customizable parameters
-indent = prob and 4 or 3 # for one dependency arc
-offset = 2               # offset from the left
+import sys, re, os
+from unicodedata import east_asian_width as width
+
 
 class Binfo:
     """ bunsetsu infomation """
@@ -16,7 +16,11 @@ class Binfo:
     def offset (self, offset) : return offset - self.width () - self.depth
 
 
-def treeify (binfo):
+def treeify (binfo, offset: int = 2, prob: bool = False):
+    # offset : offset from the left
+
+    indent = prob and 4 or 3 # for one dependency arc
+
     tree = ''
     for c in reversed (binfo[:-1]):
         c.depth = binfo[c.head].depth + indent
@@ -44,8 +48,66 @@ def treeify (binfo):
             tree += "\n"
     return tree
 
+def to_tree(lines, verbose: bool = False, prob: bool = False, morph: bool = False, quiet: bool = False, ignore: str = "" ):
+    """
+    prob(bool)  : Show dependency probability
+    ignore(str) : Ignore line starting with STR
+    """
+    binfo   = []
+    header  = ''
+    text    = ''
+    charset = ''
+    wrong   = False
+    pat_s = re.compile (r'[\t\s]')
+    pat_i = re.compile (re.escape (ignore))
+    tag = set (["D", "A", "P", "I"])
+    ww ={'Na':1, 'W':2, 'F':2, 'H':1, 'A':2, 'N':1}
+
+    result = ""
+    #for line in iter (sys.stdin.readline, ""): # no buffering
+    for line in lines:
+        if verbose:
+            sys.stdout.write (line)
+        if line[:7] == '# S-ID:' or (ignore and pat_i.match (line)):
+            header += line
+        elif line[:-1] == 'EOS': # EOS
+            for line_ in text[:-1].split ('\n'):
+                if line_[0] == '*':
+                    gold, auto = line_[2:].split (' ', 3)[-2:] # [1:3]
+                    p = ""
+                    pos = auto.find ('@')
+                    if pos != -1:
+                        if prob: p = "%.2f" % float (auto[pos + 1:])
+                        auto = auto[:pos]
+                    fail = gold[-1] in tag and auto[:-1] != gold[:-1]
+                    wrong |= fail
+                    binfo.append (Binfo (len (binfo), int (auto[:-1]), p, fail, gold))
+                else:
+                    if binfo[-1].morph and morph:
+                        binfo[-1].morph += "|"
+                    binfo[-1].morph += pat_s.split (line_, 1)[0]
+            for b in binfo:
+                b.len = sum (ww[width (x)] for x in b.morph)
+            if not quiet or wrong:
+                text = treeify (binfo)
+                result += hader
+                result += text
+                result += line
+            binfo[:] = []
+            header = ""
+            text  = ""
+            wrong = False
+        else:
+            text += line
+
+    return result
+
+# End jdepp/to_tree.py ---------------
+
 # Export as dot(graphviz)
-def dottify(graph_name: str = 'jdepp', label_name: str = 'dependency'):
+# Copyright: Light Transport Entertainment, Inc.
+# License: BSD
+def dottify(lines, graph_name: str = 'jdepp', label_name: str = 'dependency'):
 
     s = ''
 

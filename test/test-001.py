@@ -23,6 +23,7 @@ EOS
 """
 
 sent = parser.parse_from_postagged(input_postagged)
-if sent:
-    print("sent")
-    print(sent.tostr());
+print(sent)
+
+for chunk in sent.chunks():
+    print(chunk)
