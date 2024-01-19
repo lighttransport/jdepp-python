@@ -99,7 +99,7 @@ MeCab style. surface + TAB + feature(comma separated 7 fields)
 
 You can use jagger-python for POS tagging.
 
-```
+```py
 import jagger
 import jdepp
 
