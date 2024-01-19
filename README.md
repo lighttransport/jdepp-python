@@ -23,7 +23,7 @@ Model file is licensed under 3-clause BSD license.
 
 Download precompiled model file.
 
-```
+```bash
 $ wget https://github.com/lighttransport/jdepp-python/releases/download/v0.1.0/knbc-mecab-jumandic-2ndpoly.tar.gz
 $ tar xvf knbc-mecab-jumandic-2ndpoly.tar.gz
 ```
