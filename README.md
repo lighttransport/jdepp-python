@@ -1,5 +1,9 @@
 # jdepp-python
 
+<div align="center">
+  <img src="imgs/fastest-jdepp.png" width="300"/>
+</div>
+
 Python binding for J.DepP(C++ implementation of Japanese Dependency Parsers)
 
 ## Status
@@ -49,9 +53,36 @@ input_postagged = """吾輩	名詞,普通名詞,*,*,吾輩,わがはい,代表�
 EOS
 """
 
-parser.parse_from_postagged(input_postagged)
+sent = parser.parse_from_postagged(input_postagged)
+print(sent)
 ```
 
+### Print in tree
+
+```py
+print(jdepp.to_tree(str(sent)))
+```
+
+```
+# S-ID: 1; J.DepP
+  0:　　吾輩は━━┓　　　
+  1:　　　猫である。━━┓
+  2:　　　　　名前は━━┫
+  3:　　　　　　まだ━━┫
+  4:　　　　　　　　ない。EOS
+```
+
+### Graphviz dot export
+
+
+`jdepp.to_dot` is provided to export graph as dot(Graphviz)
+
+```
+
+dot_text = jdepp.to_dot(str(sentence))
+
+# feed output text to graphviz viewer, e.g. https://dreampuf.github.io/GraphvizOnline/
+```
 
 ## POS tagged input format
 
@@ -83,6 +114,9 @@ parser.load_model(jdepp_model_path)
 
 parser.parse_from_postagged(pos_tagged_input)
 ```
+
+
+![wagahai](imgs/wagahai-dot.png)
 
 ## Build standalone C++ app + training a model
 
