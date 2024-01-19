@@ -87,7 +87,9 @@ dot_text = jdepp.to_dot(str(sentence))
 # feed output text to graphviz viewer, e.g. https://dreampuf.github.io/GraphvizOnline/
 ```
 
-![wagahai](imgs/wagahai-dot.png)
+<div align="center">
+  <img src="imgs/wagahai-dot.png" width="400"/>
+</div>
 
 ## POS tagged input format
 
