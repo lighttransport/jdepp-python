@@ -6,22 +6,26 @@
 
 Python binding for J.DepP(C++ implementation of Japanese Dependency Parsers)
 
-## Status
+## Install
 
-W.I.P.
+```
+$ python -m pip install jdepp
+```
 
-## Build configuration
+### Precompiled model files
 
-* MeCab style POS format: `FEATURE_SEP ','`
-* See `jdepp/typedf.h` for more info about ifdef macros.
-
-## Precompiled model files
+pip install does not install the model(dictionary).
 
 You can get precompiled model files(MeCab POS tagging + train with KNBC copus) from
 
 https://github.com/lighttransport/jdepp-python/releases/tag/v0.1.0
 
-Model file is licensed under 3-clause BSD license.
+Precompiled KNBC model file is licensed under 3-clause BSD license.
+
+### Build configuration
+
+* MeCab style POS format: `FEATURE_SEP ','`
+* See `jdepp/typedf.h` for more info about ifdef macros.
 
 ## Example
 
@@ -77,12 +81,13 @@ print(jdepp.to_tree(str(sent)))
 
 `jdepp.to_dot` is provided to export graph as dot(Graphviz)
 
-```
-
+```py
 dot_text = jdepp.to_dot(str(sentence))
 
 # feed output text to graphviz viewer, e.g. https://dreampuf.github.io/GraphvizOnline/
 ```
+
+![wagahai](imgs/wagahai-dot.png)
 
 ## POS tagged input format
 
@@ -116,7 +121,6 @@ parser.parse_from_postagged(pos_tagged_input)
 ```
 
 
-![wagahai](imgs/wagahai-dot.png)
 
 ## Build standalone C++ app + training a model
 
