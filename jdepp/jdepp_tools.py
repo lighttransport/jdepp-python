@@ -63,6 +63,9 @@ def to_tree(lines, verbose: bool = False, prob: bool = False, morph: bool = Fals
     tag = set (["D", "A", "P", "I"])
     ww ={'Na':1, 'W':2, 'F':2, 'H':1, 'A':2, 'N':1}
 
+    if isinstance(lines, str):
+        lines = lines.split('\n')
+
     result = ""
     #for line in iter (sys.stdin.readline, ""): # no buffering
     for line in lines:
@@ -88,6 +91,7 @@ def to_tree(lines, verbose: bool = False, prob: bool = False, morph: bool = Fals
                     binfo[-1].morph += pat_s.split (line_, 1)[0]
             for b in binfo:
                 b.len = sum (ww[width (x)] for x in b.morph)
+
             if not quiet or wrong:
                 text = treeify (binfo)
                 result += hader

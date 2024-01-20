@@ -590,6 +590,7 @@ class PySentence
 
 class PyJdepp {
  public:
+  const uint32_t kMaxChars = IOBUF_SIZE / 4; // Usually UTF-8 Japanese character is 3-bytes. div by 4 is convervative estimate.
   PyJdepp() {}
   PyJdepp(const std::string &model_path)
       : _model_path(model_path)  {
@@ -602,16 +603,22 @@ class PyJdepp {
     // Curently we must set all parameters in options as (argc, argv), then construct parser.
     //
 
-    std::cout << "model_path " << model_path << "\n";
+    //std::cout << "model_path " << model_path << "\n";
     _argv_str.push_back("pyjdepp");
-    _argv_str.push_back("--verbose");
-    _argv_str.push_back("10");
+    //_argv_str.push_back("--verbose");
+    //_argv_str.push_back("10");
     _argv_str.push_back("-m");
     _argv_str.push_back(model_path);
 
+    // TODO: args for learner, chunker, depend
+
     setup_argv();
 
-    pdep::option options(int(_argv.size()), _argv.data());
+    pdep::option options(int(_argv.size()), _argv.data(),
+      int(_learner_argv.size()), _learner_argv.data(),
+      int(_chunk_argv.size()), _chunk_argv.data(),
+      int(_depend_argv.size()), _depend_argv.data()
+    );
 
     if (_parser && _parser->model_loaded()) {
       // discard previous model&instance.
@@ -634,7 +641,16 @@ class PyJdepp {
       return PySentence();
     }
 
+    if (input_postagged.size() > IOBUF_SIZE) {
+      py::print("Input too large. Input bytes must be less than ", IOBUF_SIZE);
+      return PySentence();
+    }
+
     const pdep::sentence_t *sent = _parser->parse_from_postagged(input_postagged.c_str(), input_postagged.size());
+    if (!sent) {
+      py::print("Failed to parse text from POS tagged string");
+      return PySentence();
+    }
 
     PySentence pysent;
 
@@ -722,6 +738,22 @@ class PyJdepp {
     for (auto &v : _argv_str) {
       _argv.push_back(const_cast<char *>(v.c_str()));
     }
+    _argv.push_back(nullptr); // must add 'nullptr' at the end, otherwise out-of-bounds access will happen in optparse 
+
+    for (auto &v : _learner_argv_str) {
+      _learner_argv.push_back(const_cast<char *>(v.c_str()));
+    }
+    _learner_argv.push_back(nullptr);
+
+    for (auto &v : _chunk_argv_str) {
+      _chunk_argv.push_back(const_cast<char *>(v.c_str()));
+    }
+    _chunk_argv.push_back(nullptr);
+
+    for (auto &v : _depend_argv_str) {
+      _depend_argv.push_back(const_cast<char *>(v.c_str()));
+    }
+    _depend_argv.push_back(nullptr);
   }
 
   uint32_t _nthreads{0};  // 0 = use all cores
@@ -730,6 +762,15 @@ class PyJdepp {
 
   std::vector<char *> _argv;
   std::vector<std::string> _argv_str;
+
+  std::vector<char *> _learner_argv;
+  std::vector<std::string> _learner_argv_str;
+
+  std::vector<char *> _chunk_argv;
+  std::vector<std::string> _chunk_argv_str;
+
+  std::vector<char *> _depend_argv;
+  std::vector<std::string> _depend_argv_str;
 
 };
 
@@ -743,6 +784,7 @@ PYBIND11_MODULE(jdepp_ext, m) {
   py::class_<pyjdepp::PyJdepp>(m, "JdeppExt")
       .def(py::init<>())
       //.def(py::init<std::string>())
+      .def_readonly("MAX_CHARS", &pyjdepp::PyJdepp::kMaxChars)
       .def("load_model", &pyjdepp::PyJdepp::load_model)
       .def("parse_from_postagged", [](const pyjdepp::PyJdepp &self, const std::string &str) {
         //if (!self.model_loaded()) {

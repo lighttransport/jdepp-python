@@ -152,19 +152,19 @@ optparse_init(struct optparse *options, char **argv)
 static int
 optparse_is_dashdash(const char *arg)
 {
-    return arg != 0 && arg[0] == '-' && arg[1] == '-' && arg[2] == '\0';
+    return arg != 0 && (strlen(arg) == 2) && arg[0] == '-' && arg[1] == '-' && arg[2] == '\0';
 }
 
 static int
 optparse_is_shortopt(const char *arg)
 {
-    return arg != 0 && arg[0] == '-' && arg[1] != '-' && arg[1] != '\0';
+    return arg != 0 && (strlen(arg) >= 2) && arg[0] == '-' && arg[1] != '-' && arg[1] != '\0';
 }
 
 static int
 optparse_is_longopt(const char *arg)
 {
-    return arg != 0 && arg[0] == '-' && arg[1] == '-' && arg[2] != '\0';
+    return arg != 0 && (strlen(arg) >= 3) && arg[0] == '-' && arg[1] == '-' && arg[2] != '\0';
 }
 
 static void

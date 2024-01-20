@@ -518,11 +518,16 @@ namespace pdep {
     char *r = _s->postagged () + len - 4;
     if (len < 4 || *r != 'E' || *(r+1) != 'O' || *(r+2) != 'S' || *(r+3) != '\n') {
       fprintf(stderr, "%s", "found a tagged sentence that is not EOS-terminated.");
+      return nullptr;
     }
+
     for (char* p (_s->postagged ()), *q (p); p != r; p = ++q) {
-      while (q != r && *q != '\n') ++q;
-      if (! _opt.ignore || std::strncmp (p, _opt.ignore, _opt.ignore_len) != 0)
-        _s->add_token (p, q - p, _dict);
+      while ((*q) && q != r && *q != '\n') ++q;
+      if ((*q)) {
+        if (! _opt.ignore || std::strncmp (p, _opt.ignore, _opt.ignore_len) != 0) {
+          _s->add_token (p, q - p, _dict);
+        }
+      }
     }
     _chunk <PARSE> ();
     _s->setup (_dict);
