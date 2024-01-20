@@ -64,7 +64,8 @@ def to_tree(lines, verbose: bool = False, prob: bool = False, morph: bool = Fals
     ww ={'Na':1, 'W':2, 'F':2, 'H':1, 'A':2, 'N':1}
 
     if isinstance(lines, str):
-        lines = lines.split('\n')
+        # make List[str]
+        lines = [line + '\n' for line in lines.split('\n')]
 
     result = ""
     #for line in iter (sys.stdin.readline, ""): # no buffering
@@ -94,7 +95,7 @@ def to_tree(lines, verbose: bool = False, prob: bool = False, morph: bool = Fals
 
             if not quiet or wrong:
                 text = treeify (binfo)
-                result += hader
+                result += header
                 result += text
                 result += line
             binfo[:] = []
@@ -108,25 +109,92 @@ def to_tree(lines, verbose: bool = False, prob: bool = False, morph: bool = Fals
 
 # End jdepp/to_tree.py ---------------
 
-# Export as dot(graphviz)
+# Export as dot(graphviz), based on to_tree.py
+# Copyright: Naoki Yoshinaga <ynaga@tkl.iis.u-tokyo.ac.jp>
 # Copyright: Light Transport Entertainment, Inc.
 # License: BSD
-def dottify(lines, graph_name: str = 'jdepp', label_name: str = 'dependency'):
+
+def dottyfy (binfo, graph_name: str = "jdepp", label_name = "# S-ID; 1", prob: bool = False):
+    # TODO: better layouting by considering binfo.width
+    # TODO: show probability
+    # TODO: styles for node and edge.
 
     s = ''
+    s += 'digraph ' + graph_name + ' {\n'
 
-    s += 'digraph ' + graph_name + '{\n'
-
-    s += '\ngraph [\n'
-    s += '  charset = "UTF-8";\n'
-    s += '  label = "{}";\n'.format(label_name)
-    s += '];\n'
+    s += '\n'
+    s += '  graph [\n'
+    s += '    charset = "UTF-8";\n'
+    s += '    label = "{}";\n'.format(label_name)
+    s += '  ];\n'
     s += '\n'
 
-    s += 'node [\n'
+    s += '\n'
+    s += '  node [ shape = record ];\n'
+    s += '\n'
 
-    s += ']\n'
+    # define nodes
+    for b in binfo:
+        s += "  bunsetsu{} [label=\"{}\"];\n".format(b.id, b.morph)
 
-    s += '}\n'
+    s += '\n'
+
+    # define edges
+    for b in binfo:
+        if b.head < 0:
+            # root
+            continue
+
+        s += "  bunsetsu{} -> bunsetsu{};\n".format(b.id, b.head)
+
+
+    s += '\n}\n'
 
     return s
+
+
+def to_dot(lines, morph: bool = True, ignore: str = ""):
+
+    binfo   = []
+    header  = ''
+    text    = ''
+    charset = ''
+    wrong   = False
+    pat_s = re.compile (r'[\t\s]')
+    pat_i = re.compile (re.escape (ignore))
+    tag = set (["D", "A", "P", "I"])
+    ww ={'Na':1, 'W':2, 'F':2, 'H':1, 'A':2, 'N':1}
+
+    if isinstance(lines, str):
+        # make List[str]
+        lines = [line + '\n' for line in lines.split('\n')]
+
+    for line in lines:
+        if line[:7] == '# S-ID:' or (ignore and pat_i.match (line)):
+            header += line
+        elif line[:-1] == 'EOS': # EOS
+            for line_ in text[:-1].split ('\n'):
+                if line_[0] == '*':
+                    gold, auto = line_[2:].split (' ', 3)[-2:] # [1:3]
+                    p = ""
+                    pos = auto.find ('@')
+                    if pos != -1:
+                        if prob: p = "%.2f" % float (auto[pos + 1:])
+                        auto = auto[:pos]
+                    fail = gold[-1] in tag and auto[:-1] != gold[:-1]
+                    wrong |= fail
+                    binfo.append (Binfo (len (binfo), int (auto[:-1]), p, fail, gold))
+                else:
+                    if binfo[-1].morph and morph:
+                        binfo[-1].morph += "|"
+                    binfo[-1].morph += pat_s.split (line_, 1)[0]
+            for b in binfo:
+                b.len = sum (ww[width (x)] for x in b.morph)
+            if not wrong:
+                return dottyfy (binfo)
+
+            return None # fail
+        else:
+            text += line
+
+    return None # failed to parse line
