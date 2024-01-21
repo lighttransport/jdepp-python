@@ -659,6 +659,11 @@ class PyJdepp {
     // but this make Python binding easier(we don't need to consider lifetime of Python/C++ object)
     const char *str = sent->print_tostr(pdep::RAW, /* print_prob */false);
 
+    if (!str) {
+      py::print("Failed to get string from C++ sentence_t struct.");
+      return PySentence();
+    }
+
     // Assume single sentence in input text(i.e. one `EOS` line)
     std::string header = "# S-ID: " + std::to_string(1) + "; J.DepP\n";
     pysent.set_str(header + std::string(str));

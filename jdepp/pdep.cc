@@ -517,7 +517,12 @@ namespace pdep {
     //
     char *r = _s->postagged () + len - 4;
     if (len < 4 || *r != 'E' || *(r+1) != 'O' || *(r+2) != 'S' || *(r+3) != '\n') {
-      fprintf(stderr, "%s", "found a tagged sentence that is not EOS-terminated.");
+      fprintf(stderr, "%s", "pdep.cc: found a tagged sentence that is not EOS-terminated.\n");
+      return nullptr;
+    }
+
+    if ((len == 4) && std::strncmp(r, "EOS\n", 4) == 0) {
+      fprintf(stderr, "pdep.cc: Invalid input: input contains `EOS\\n' only.\n");
       return nullptr;
     }
 
