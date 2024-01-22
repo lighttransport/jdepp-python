@@ -115,8 +115,8 @@ toks = tokenizer.tokenize(text)
 
 pos_tagged_input = ""
 for tok in toks:
-    pos_tagged_input += tok.surface() + '\t' + tok.feature()
-pos_tagged_input += "EOS"
+    pos_tagged_input += tok.surface() + '\t' + tok.feature() + '\n'
+pos_tagged_input += "EOS\n"
 
 
 jdepp_model_path = "model/knbc"
