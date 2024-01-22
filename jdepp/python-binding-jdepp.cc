@@ -782,6 +782,7 @@ PYBIND11_MODULE(jdepp_ext, m) {
       .def_readonly("head_id_cand", &pyjdepp::PyChunk::head_id_cand)
       .def_readonly("head_id_gold", &pyjdepp::PyChunk::head_id_gold)
       .def_readonly("depend_prob", &pyjdepp::PyChunk::depend_prob)
+      .def("dependents", &pyjdepp::PyChunk::dependents)
       .def("tokens", &pyjdepp::PyChunk::tokens)
       .def("str", &pyjdepp::PyChunk::str)
       .def("print", &pyjdepp::PyChunk::print, "Print chunk(bunsetsu) string", py::arg("prob") = false)
