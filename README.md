@@ -91,6 +91,8 @@ dot_text = jdepp.to_dot(str(sentence))
   <img src="imgs/wagahai-dot.png" width="400"/>
 </div>
 
+See [examples/](examples) for more details
+
 ## POS tagged input format
 
 MeCab style. surface + TAB + feature(comma separated 7 fields)
