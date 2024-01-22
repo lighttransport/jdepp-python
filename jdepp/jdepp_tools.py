@@ -135,7 +135,8 @@ def dottyfy (binfo, graph_name: str = "jdepp", label_name = "# S-ID; 1", prob: b
 
     # define nodes
     for b in binfo:
-        s += "  bunsetsu{} [label=\"{}\"];\n".format(b.id, b.morph)
+        # escale dquote
+        s += "  bunsetsu{} [label=\"{}\"];\n".format(b.id, b.morph.replace('"', '\"'))
 
     s += '\n'
 

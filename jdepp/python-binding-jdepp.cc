@@ -758,36 +758,12 @@ class PyJdepp {
   std::vector<PySentence> parse_from_postagged_batch(const std::vector<std::string> &input_postagged_array) const {
     std::vector<PySentence> sents;
 
-    uint32_t num_threads = (_nthreads == 0)
-                               ? uint32_t(std::thread::hardware_concurrency())
-                               : _nthreads;
-    num_threads = (std::max)(
-        1u, (std::min)(static_cast<uint32_t>(num_threads), kMaxThreads));
-
-    size_t num_inputs = input_postagged_array.size();
-
-    if (num_inputs < 128) {
-      // Assume input is too small
-      num_threads = 1;
-    }
-
-    std::vector<std::thread> workers;
-    std::atomic<uint32_t> i{0};
-
+    // NOTE: threading is not supported in J.DepP(internal state is get corrupted in theaded execution)
+    // Use serial execution for a while.
     sents.resize(input_postagged_array.size());
 
-    for (size_t t = 0; t < static_cast<size_t>(num_threads); t++) {
-      workers.push_back(std::thread([&, t]() {
-        size_t k = 0;
-
-        while ((k = i++) < num_inputs) {
-          sents[k] = std::move(parse_from_postagged(input_postagged_array[k]));
-        }
-      }));
-    }
-    
-    for (auto &t : workers) {
-      t.join();
+    for (size_t k = 0; k < input_postagged_array.size(); k++) {
+      sents[k] = parse_from_postagged(input_postagged_array[k]);
     }
 
     return sents;
@@ -809,7 +785,7 @@ class PyJdepp {
     for (auto &v : _argv_str) {
       _argv.push_back(const_cast<char *>(v.c_str()));
     }
-    _argv.push_back(nullptr); // must add 'nullptr' at the end, otherwise out-of-bounds access will happen in optparse 
+    _argv.push_back(nullptr); // must add 'nullptr' at the end, otherwise out-of-bounds access will happen in optparse
 
     for (auto &v : _learner_argv_str) {
       _learner_argv.push_back(const_cast<char *>(v.c_str()));
