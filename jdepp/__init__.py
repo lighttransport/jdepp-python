@@ -32,6 +32,13 @@ class Jdepp:
 
         return self._jdepp.parse_from_postagged(input_postagged)
 
+    def parse_from_postagged_batch(self, input_postaggeds: str):
+        if not isinstance(input_postaggeds, list):
+            sys.stderr.write("Input must be List[str]") 
+            return None
+
+        return self._jdepp.parse_from_postagged_batch(input_postaggeds)
+
     # for internal debugging.
     def _run(self):
         self._jdepp.run()

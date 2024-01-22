@@ -32,6 +32,19 @@ namespace {
 
 constexpr uint32_t kMaxThreads = 1024;
 
+static inline bool is_line_ending(const char *p, size_t i, size_t end_i) {
+  if (p[i] == '\0') return true;
+  if (p[i] == '\n') return true;  // this includes \r\n
+  if (p[i] == '\r') {
+    if (((i + 1) < end_i) && (p[i + 1] != '\n')) {  // detect only \r case
+      return true;
+    }
+  }
+  return false;
+}
+
+
+#if 0 // not used atm.
 // ----------------------------------------------------------------------------
 // Small vector class useful for multi-threaded environment.
 //
@@ -242,17 +255,6 @@ class StackVector
 
 // ----------------------------------------------------------------------------
 
-static inline bool is_line_ending(const char *p, size_t i, size_t end_i) {
-  if (p[i] == '\0') return true;
-  if (p[i] == '\n') return true;  // this includes \r\n
-  if (p[i] == '\r') {
-    if (((i + 1) < end_i) && (p[i + 1] != '\n')) {  // detect only \r case
-      return true;
-    }
-  }
-  return false;
-}
-
 struct LineInfo {
   size_t pos{0};
   size_t len{0};
@@ -360,6 +362,7 @@ static LineInfoVector split_lines(const std::string &src,
 
   return line_infos;
 }
+#endif
 
 }  // namespace
 
@@ -545,6 +548,11 @@ struct PyChunk
     if (prob) {
       ss << "@" << depend_prob;
     }
+    ss << "\n";
+
+    for (const auto &tok : _tokens) {
+      ss << tok.surface() << "\t" << tok.feature() << "\n";
+    }
 
     return ss.str();
   }
@@ -582,6 +590,18 @@ class PySentence
     _chunks = rhs;
   }
 
+  const std::string print(bool prob = false) const {
+    std::stringstream ss;
+
+    for (const auto &chunk : _chunks) {
+      ss << chunk.print(prob);
+    }
+
+    ss << "EOS\n";
+
+    return ss.str();
+  }
+
  private:
   std::string _str;
   std::vector<PyToken> _tokens;
@@ -595,6 +615,10 @@ class PyJdepp {
   PyJdepp(const std::string &model_path)
       : _model_path(model_path)  {
     load_model(_model_path);
+  }
+
+  void set_threads(uint32_t nthreads) {
+    _nthreads = nthreads;
   }
 
   bool load_model(const std::string &model_path) {
@@ -731,6 +755,45 @@ class PyJdepp {
     return pysent;
   }
 
+  std::vector<PySentence> parse_from_postagged_batch(const std::vector<std::string> &input_postagged_array) const {
+    std::vector<PySentence> sents;
+
+    uint32_t num_threads = (_nthreads == 0)
+                               ? uint32_t(std::thread::hardware_concurrency())
+                               : _nthreads;
+    num_threads = (std::max)(
+        1u, (std::min)(static_cast<uint32_t>(num_threads), kMaxThreads));
+
+    size_t num_inputs = input_postagged_array.size();
+
+    if (num_inputs < 128) {
+      // Assume input is too small
+      num_threads = 1;
+    }
+
+    std::vector<std::thread> workers;
+    std::atomic<uint32_t> i{0};
+
+    sents.resize(input_postagged_array.size());
+
+    for (size_t t = 0; t < static_cast<size_t>(num_threads); t++) {
+      workers.push_back(std::thread([&, t]() {
+        size_t k = 0;
+
+        while ((k = i++) < num_inputs) {
+          sents[k] = std::move(parse_from_postagged(input_postagged_array[k]));
+        }
+      }));
+    }
+    
+    for (auto &t : workers) {
+      t.join();
+    }
+
+    return sents;
+
+  }
+
   bool model_loaded() const {
     return (_parser && _parser->model_loaded());
   }
@@ -794,6 +857,7 @@ PYBIND11_MODULE(jdepp_ext, m) {
       //.def(py::init<std::string>())
       .def_readonly("MAX_CHARS", &pyjdepp::PyJdepp::kMaxChars)
       .def("load_model", &pyjdepp::PyJdepp::load_model)
+      .def("parse_from_postagged_batch", &pyjdepp::PyJdepp::parse_from_postagged_batch)
       .def("parse_from_postagged", [](const pyjdepp::PyJdepp &self, const std::string &str) {
         //if (!self.model_loaded()) {
         //  py::print("model not loaded.");
@@ -809,6 +873,7 @@ PYBIND11_MODULE(jdepp_ext, m) {
       .def("str", &pyjdepp::PySentence::str)
       .def("tokens", &pyjdepp::PySentence::tokens)
       .def("chunks", &pyjdepp::PySentence::chunks)
+      .def("print", &pyjdepp::PySentence::print, "Print parsed sentence in string", py::arg("prob") = false)
       .def("__repr__", &pyjdepp::PySentence::str)
       ;
 

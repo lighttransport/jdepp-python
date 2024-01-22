@@ -284,10 +284,18 @@ namespace pdep {
           bool flag = (j == b->head_id_gold);
           // output example for training / fstrie construction
           if (MODE != PARSE) _print_ex (flag);
-          if (MODE != LEARN)
-            flag =
-              _opt.verbose < 0 ? (b->depnd_prob = _pecco->getProbability (_fv)) > _pecco->threshold () :
-              _pecco->binClassify (_fv);
+          if (MODE != LEARN) {
+            
+            // always compute depnd_prob.
+            // getProbability() and binClassify() change the internal state, so do not call it
+            // when we use getProbability()
+            b->depnd_prob = _pecco->getProbability (_fv);
+            flag = (b->depnd_prob > _pecco->threshold ());
+
+            //flag =
+            //  _opt.verbose < 0 ? (b->depnd_prob > _pecco->threshold ()) :
+            //  _pecco->binClassify (_fv);
+          }
 #if defined (USE_OPAL) || defined (USE_MAXENT)
           else
             _processSample (flag); // learn
@@ -320,9 +328,11 @@ namespace pdep {
         bool flag = (j == _s->chunk (i)->head_id_gold);
         if (MODE != PARSE) _print_ex (flag);
         if (MODE != LEARN) {
-          flag =
-            _opt.verbose < 0 ? (_s->chunk (i)->depnd_prob = _pecco->getProbability (_fv)) > _pecco->threshold ()
-            : _pecco->binClassify (_fv);
+          _s->chunk(i)->depnd_prob = _pecco->getProbability (_fv);
+          flag = (_s->chunk (i)->depnd_prob > _pecco->threshold ());
+          //flag =
+          //  _opt.verbose < 0 ? (_s->chunk (i)->depnd_prob > _pecco->threshold ())
+          //  : _pecco->binClassify (_fv);
         }
 #if defined (USE_OPAL) || defined (USE_MAXENT)
         else _processSample (flag);
@@ -403,9 +413,13 @@ namespace pdep {
           _event_gen_from_tuple (i, head_id, j);
           if (MODE == CACHE)
             _print_ex (head_id < _s->chunk (i)->head_id);
-          bool flag =
-            _opt.verbose < 0 ? (_s->chunk (i)->depnd_prob = _pecco->getProbability (_fv))  > _pecco->threshold ()
-            : _pecco->binClassify (_fv);
+
+          _s->chunk (i)->depnd_prob = _pecco->getProbability (_fv);
+          bool flag = _s->chunk (i)->depnd_prob > _pecco->threshold ();
+
+          //bool flag =
+          //  _opt.verbose < 0 ? (_s->chunk (i)->depnd_prob > _pecco->threshold ())
+          //  : _pecco->binClassify (_fv);
           if (flag) head_id = j; // RIGHT
         }
         _s->chunk (i)->head_id = head_id;
@@ -439,10 +453,12 @@ namespace pdep {
       // output example for training / fstrie construction
       if (MODE != PARSE) _print_ex (m->chunk_start_gold);
       if (MODE != LEARN) {
-        if (_opt.verbose < 0)
-          m->chunk_start = (m->chunk_start_prob = _pecco->getProbability (_fv)) > _pecco->threshold ();
-        else
-          m->chunk_start = _pecco->binClassify (_fv);
+        m->chunk_start_prob = _pecco->getProbability (_fv);
+        m->chunk_start = (m->chunk_start_prob > _pecco->threshold ());
+        //if (_opt.verbose < 0)
+        //  m->chunk_start = (m->chunk_start_prob = _pecco->getProbability (_fv)) > _pecco->threshold ();
+        //else
+        //  m->chunk_start = _pecco->binClassify (_fv);
       }
 #if defined (USE_OPAL) || defined (USE_MAXENT)
       else

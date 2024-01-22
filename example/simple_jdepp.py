@@ -24,6 +24,11 @@ print(sent)
 
 print("--------------------")
 
+# Print parsed result with probability
+print(sent.print(prob=True))
+
+print("--------------------")
+
 # Print each bunsetsu(chunk)
 for chunk in sent.chunks():
     print("Chunk", chunk)
