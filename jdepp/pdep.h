@@ -226,8 +226,6 @@ static struct optparse_long maxent_long_options[] = {
 };
 #endif
 
-//extern char* optarg;
-//extern int   optind;
 #endif
 
 // raw strings for utf8
@@ -337,8 +335,8 @@ namespace pdep {
 
 #if 1
     //
-    option (int argc, char** argv) :
-      com (argv[0]), train ("train.JDP"),
+    option (int main_argc, char** main_argv, int _learner_argc, char **_learner_argv, int _chunk_argc, char **_chunk_argv, int _depend_argc, char **_depend_argv) :
+      com (main_argv[0]), train ("train.JDP"),
 #ifdef USE_STACKING
       model_dir (JDEPP_DEFAULT_MODEL "_stack"),
 #else
@@ -355,12 +353,11 @@ namespace pdep {
 #ifdef USE_AS_STANDALONE
       mecab_dic (MECAB_DICT),
 #endif
-      learner_argv (0), chunk_argv (0), depnd_argv (0), learner_argc (0), chunk_argc (0), depnd_argc (0), verbose (0), ignore (0), ignore_len (0), utf8 (true) {
+      learner_argv (_learner_argv), chunk_argv (_chunk_argv), depnd_argv (_depend_argv), learner_argc (_learner_argc), chunk_argc (_chunk_argc), depnd_argc (_depend_argc), verbose (0), ignore (0), ignore_len (0), utf8 (true) {
       // getOpt
-      if (argc == 0) return;
-      //int optind = 1;
+      if (main_argc == 0) return;
       struct optparse options;
-      optparse_init(&options, argv);
+      optparse_init(&options, main_argv);
       while (1) {
         int opt = optparse_long (&options, jdepp_long_options, NULL);
         if (opt == -1) break;
@@ -436,6 +433,8 @@ namespace pdep {
       if (input == CHUNK && parser != LINEAR) {
         my_warnx ("%s", "NOTE: parsing algorithm [-p] is ignored in training a chunker.\n");
       }
+
+#if 0
       // learner options
       if (std::strcmp (argv[options.optind - 1], "--") == 0) --options.optind;
 
@@ -445,6 +444,7 @@ namespace pdep {
       _set_library_options (options, argc, argv, chunk_argc, chunk_argv);
       // classifier options for dependency parser
       _set_library_options (options, argc, argv, depnd_argc, depnd_argv);
+#endif
 
       valid = true;
     }
@@ -452,7 +452,7 @@ namespace pdep {
     void printHelp   () { std::fprintf (stderr, JDEPP_OPT0 JDEPP_OPT1 JDEPP_OPT_TRAIN JDEPP_OPT_TEST JDEPP_OPT_MISC); }
 #endif
   private:
-#if 1
+#if 0
     void _set_library_options (struct optparse &options, const int argc, char** argv,
                                int& largc, char**& largv) {
 

@@ -1,4 +1,4 @@
-from .jdepp_ext import *
+from jdepp_ext import *
 
 # load setptools_scm generated _version.py
 try:
@@ -14,6 +14,8 @@ from pathlib import Path
 
 from .jdepp_tools import *
 
+__all__ = ['to_tree', 'to_dot']
+
 
 class Jdepp:
     def __init__(self):
@@ -24,6 +26,10 @@ class Jdepp:
         return self._jdepp.load_model(str(dict_path))
 
     def parse_from_postagged(self, input_postagged: str):
+        if isinstance(input_postagged, list):
+            # Assume each line ends with newline '\n'
+            input_postagged = "".join(input_postagged)
+
         return self._jdepp.parse_from_postagged(input_postagged)
 
     # for internal debugging.

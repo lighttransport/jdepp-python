@@ -156,15 +156,15 @@ test    test file           set '-' to skip testing\n\
 
 #ifdef USE_MULTICLASS
 #ifdef _OPENMP
-static const char* opal_opts = "t:d:kpO:o:l:c:i:asn:b:M:h";
+//static const char* opal_opts = "t:d:kpO:o:l:c:i:asn:b:M:h";
 #else
-static const char* opal_opts = "t:d:kpO:o:l:c:i:asb:M:h";
+//static const char* opal_opts = "t:d:kpO:o:l:c:i:asb:M:h";
 #endif
 #else
 #ifdef _OPENMP
-static const char* opal_opts = "t:d:kpO:o:l:c:i:asn:b:M:Ph";
+//static const char* opal_opts = "t:d:kpO:o:l:c:i:asn:b:M:Ph";
 #else
-static const char* opal_opts = "t:d:kpO:o:l:c:i:asb:M:Ph";
+//static const char* opal_opts = "t:d:kpO:o:l:c:i:asb:M:Ph";
 #endif
 #endif
 
@@ -466,7 +466,6 @@ namespace opal {
       if (! splitN) // enable shrinkage
         shrink = true, splitN = (std::numeric_limits <uint>::max) ();
       if (std::strcmp (com, "--") == 0) return;
-      printf("argc = %d, options.optind + 3 %d\n", argc, options.optind);
       if (argc < options.optind + 3) {
         printCredit ();
         my_errx (1, "Type `%s --help' for option details.", com);
@@ -1016,7 +1015,7 @@ namespace opal {
       _fp = lfn ? std::fopen (lfn, "r") : stdin;  // initialize
       if (! _fp) my_errx (1, "no such file: %s", lfn);
       std::setvbuf (_fp, &_buf[0], _IOFBF, BUF_SIZE);
-      _lm = lm; _fm = fm; _flag = flag; _M = M; 
+      _lm = lm; _fm = fm; _flag = flag; _M = M;
       if (_flag) // read data for feature packing / thresholding
         read (_fp, _lm, _fm, _flag, _M), _flag = false;
     }
@@ -1459,14 +1458,14 @@ namespace opal {
       std::fprintf (stderr, "loading..");
 #ifdef USE_STRING_FEATURE
       char* ffn
-        = std::strcat (std::strcpy (new char[std::strlen (mfn) + 10], mfn), 
+        = std::strcat (std::strcpy (new char[std::strlen (mfn) + 10], mfn),
                        ".features");
       _fm.load (ffn);
       delete [] ffn;
 #endif
       FILE* reader = std::fopen (mfn, "r");
       // examine model type
-      if (! reader || std::feof (reader)) 
+      if (! reader || std::feof (reader))
         my_errx (1, "cannot read a model: %s", mfn);
       char buf[BUF_SIZE]; std::setvbuf (reader, &buf[0], _IOFBF, BUF_SIZE);
       const char flag = static_cast <char> (std::fgetc (reader));
