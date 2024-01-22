@@ -41,6 +41,7 @@ import jdepp
 
 model_path = "model/knbc"
 
+parser = jdepp.Jdepp()
 parser.load_model(model_path)
 
 # NOTE: Mecab format: surface + TAB + feature(comma separated 7 fields)
