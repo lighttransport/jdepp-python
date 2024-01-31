@@ -34,7 +34,7 @@ jobs:
             CIBW_ARCHS_LINUX: "x86_64 i686"
             # To test jdepp fully, we need to download dictionary.
             # for a while, we just test 'import jdepp'.
-            CIBW_TEST_COMMAND: "python -c 'import jdepp; print(jdepp.__version__)'"
+            CIBW_TEST_COMMAND: "python -c \"import jdepp; print(jdepp.__version__)\""
             # it looks cibuildwheel fails to add version string to wheel file for python 3.6, so skip it
             CIBW_SKIP: pp*
 
