@@ -1298,7 +1298,7 @@ namespace opal {
 #endif
           train1 (pool);
         std::fprintf (stderr, "\r%s%s iter=%-3u #ex=%-8ld ",
-                      _opt.average ? "Avg " : "", algo[_opt.algo], i, _nex);
+                      _opt.average ? "Avg " : "", algo[_opt.algo], i, long(_nex));
         if (_opt.kernel == POLY) std::fprintf (stderr, "#SV=%u; ", _nsv);
         if (std::strcmp (tfn, "") != 0) {
           Model m (_opt);
@@ -1702,6 +1702,7 @@ namespace opal {
     typedef ss_t::const_iterator  ss_it;
     typedef std::vector <ss_t>    f2ss_t;
 #if defined (USE_HASH) || defined (USE_TR1_HASH)
+#if 0 // std::unary_function and std::binary_function is deprecated in C++11 and removed in C++17
     struct hash_sv : std::unary_function <const sv_t*, size_t> {
       result_type operator () (argument_type f) const
       { return std::accumulate (f->begin (), f->end (), FNV_BASIS, inc_fnv ()); }
@@ -1712,12 +1713,26 @@ namespace opal {
           std::equal (a->begin (), a->end (), b->begin ());
       }
     };
+#else
+    struct hash_sv {
+      inline size_t operator()(const sv_t *) const {
+        return std::accumulate (f->begin (), f->end (), FNV_BASIS, inc_fnv ()); }
+      }
+    };
+    struct eq_sv {
+      bool operator () (const sv_t *a, const sv_t *b) const {
+        return a->getSize () == b->getSize () &&
+          std::equal (a->begin (), a->end (), b->begin ());
+      }
+    };
+#endif
 #ifdef USE_HASH
     typedef std::unordered_map <const sv_t*, uint, hash_sv, eq_sv> fv2s_t;
 #else
     typedef std::tr1::unordered_map <const sv_t*, uint, hash_sv, eq_sv> fv2s_t;
 #endif
 #else
+#if 0
     struct less_sv : std::binary_function <const sv_t*, const sv_t*, bool> {
       result_type operator () (first_argument_type a, second_argument_type b) const {
         for (const uint* p (a->begin ()), *q (b->begin ());; ++p, ++q) {
@@ -1728,6 +1743,18 @@ namespace opal {
         }
       }
     };
+#else
+    struct less_sv {
+      bool operator () (const sv_t* a, const sv_t* b) const {
+        for (const uint* p (a->begin ()), *q (b->begin ());; ++p, ++q) {
+          if (p == a->end ()) return q != b->end ();
+          if (q == b->end ()) return false;
+          else if (*p < *q)   return true;
+          else if (*p > *q)   return false;
+        }
+      }
+    };
+#endif
     typedef std::map <const sv_t*, uint, less_sv> fv2s_t;
 #endif
     // variables
@@ -2195,7 +2222,7 @@ namespace opal {
         if (rss > _opt.trieT) {
           std::fprintf (stderr,
                         "shrink splitN: 2^%lu-1 (= %u) => 2^%u-1 (= %u)\n",
-                        _nbin, _opt.splitN, i, (1 << i) - 1);
+                        static_cast<unsigned long>(_nbin), _opt.splitN, i, (1 << i) - 1);
           while (_nbin > i) {
             --_nbin;
             delete _ftrie[_nbin];
