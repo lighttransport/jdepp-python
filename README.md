@@ -4,7 +4,7 @@
   <img src="imgs/fastest-jdepp.png" width="300"/>
 </div>
 
-Python binding for J.DepP(C++ implementation of Japanese Dependency Parsers)
+Python binding for J.DepP(C++ implementation of Japanese Dependency Parsers) https://www.tkl.iis.u-tokyo.ac.jp/~ynaga/jdepp/
 
 ## Install
 
@@ -173,7 +173,8 @@ Versioning is automatically done through `setuptools_scm`
 ## License
 
 jdepp-python is licensed under 2-Clause BSD license.
-J.DepP is licensed under GPLv2/LGPLv2.1/BSD triple license.
+
+J.DepP https://www.tkl.iis.u-tokyo.ac.jp/~ynaga/jdepp/ is licensed under GPLv2/LGPLv2.1/BSD triple license.
 
 ## Thrird party license
 
