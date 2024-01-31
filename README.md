@@ -41,6 +41,7 @@ import jdepp
 
 model_path = "model/knbc"
 
+parser = jdepp.Jdepp()
 parser.load_model(model_path)
 
 # NOTE: Mecab format: surface + TAB + feature(comma separated 7 fields)
@@ -91,6 +92,8 @@ dot_text = jdepp.to_dot(str(sentence))
   <img src="imgs/wagahai-dot.png" width="400"/>
 </div>
 
+See [examples/](examples) for more details
+
 ## POS tagged input format
 
 MeCab style. surface + TAB + feature(comma separated 7 fields)
@@ -112,8 +115,8 @@ toks = tokenizer.tokenize(text)
 
 pos_tagged_input = ""
 for tok in toks:
-    pos_tagged_input += tok.surface() + '\t' + tok.feature()
-pos_tagged_input += "EOS"
+    pos_tagged_input += tok.surface() + '\t' + tok.feature() + '\n'
+pos_tagged_input += "EOS\n"
 
 
 jdepp_model_path = "model/knbc"
