@@ -738,9 +738,12 @@ namespace pecco {
       (void)nread;
 #ifdef USE_PRUNING
       if (_d > 1) {
-        std::fread (&_f2dpn[0], sizeof (pn_t), _f_r * _nl * _d, reader);
-        if (_f_r - 1 < _nf)
-          std::fread (&_f2pn[0],  sizeof (pn_t), (_nf + 1) * _nl, reader);
+        size_t nread = std::fread (&_f2dpn[0], sizeof (pn_t), _f_r * _nl * _d, reader);
+        (void)nread;
+        if (_f_r - 1 < _nf) {
+          nread = std::fread (&_f2pn[0],  sizeof (pn_t), (_nf + 1) * _nl, reader);
+          (void)nread;
+        }
       }
 #endif
       std::fclose (reader);
@@ -961,11 +964,12 @@ namespace pecco {
   // explicit specialization
   template void kernel_model::_pkiClassify <BINARY> (const ny::fv_t&, double*);
   template void kernel_model::_pkiClassify <MULTI>  (const ny::fv_t&, double*);
+
   template void kernel_model::_splitClassify <true,  BINARY>  (ny::fv_t&, double*);
   template void kernel_model::_splitClassify <true,  MULTI>   (ny::fv_t&, double*);
   template void kernel_model::_splitClassify <false, BINARY>  (ny::fv_t&, double*);
   template void kernel_model::_splitClassify <false, MULTI>   (ny::fv_t&, double*);
-  
+
 }
 // score to weight
 //

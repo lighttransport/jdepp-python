@@ -31,6 +31,9 @@ jobs:
             CIBW_ARCHS_LINUX: "x86_64 i686"
             # it looks cibuildwheel fails to add version string to wheel file for python 3.6, so skip it
             CIBW_SKIP: pp*
+            # To test jdepp fully, we need to download dictionary.
+            # for a while, we just test 'import jdepp' succeeds to confirm no undefined symbol error.
+            CIBW_TEST_COMMAND: "python tests/import_test.py"
 
       - uses: actions/upload-artifact@v4
         with:

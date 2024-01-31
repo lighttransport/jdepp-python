@@ -225,7 +225,8 @@ namespace pecco {
         const size_t nfs = static_cast <size_t> (std::ftell (reader)) / (_nl * sizeof (ny::fl_t));
         if (std::fseek (reader, 0, SEEK_SET) != 0) return -1;
         _fsw = new ny::fl_t [_nl * nfs];
-        std::fread (&_fsw[0], sizeof (ny::fl_t), _nl * nfs, reader);
+        size_t nread = std::fread (&_fsw[0], sizeof (ny::fl_t), _nl * nfs, reader);
+        (void)nread;
         std::fclose (reader);
       }
       if (_opt.verbose > 0) std::fprintf (stderr, "done.\n");
@@ -396,7 +397,8 @@ namespace pecco {
           = static_cast <size_t> (std::ftell (reader)) / (_nl * sizeof (ny::fl_t));
         if (std::fseek (reader, 0, SEEK_SET) != 0) return -1;
         _fsw = new ny::fl_t [_nl * nfs];
-        std::fread (&_fsw[0], sizeof (ny::fl_t), _nl * nfs, reader);
+        size_t nread = std::fread (&_fsw[0], sizeof (ny::fl_t), _nl * nfs, reader);
+        (void)nread;
         std::fclose (reader);
       }
       for (std::set <FstKey*>::const_iterator it = fst_key.begin ();
@@ -728,8 +730,15 @@ namespace pecco {
   // explicit specialization
 #ifdef USE_KERNEL
   template class ClassifierBase <kernel_model>;
-  template void ClassifierBase <kernel_model>::_pkeClassify <true, BINARY> (ny::fv_t&, double*);
-  template void ClassifierBase <kernel_model>::_pkeClassify <true, MULTI>  (ny::fv_t&, double*);
+  //template void ClassifierBase <kernel_model>::_pkeClassify <true, BINARY> (ny::fv_t&, double*);
+  //template void ClassifierBase <kernel_model>::_pkeClassify <true, MULTI>  (ny::fv_t&, double*);
+
+  template bool ClassifierBase <kernel_model>::_pkeClassify <true, BINARY> (double*, ny::fv_it, const ny::fv_it&, const ny::fv_it&);
+  template bool ClassifierBase <kernel_model>::_pkeClassify <true, MULTI>  (double*, ny::fv_it, const ny::fv_it&, const ny::fv_it&);
+
+  template bool ClassifierBase <kernel_model>::_pkeClassify <false, BINARY> (double*, ny::fv_it, const ny::fv_it&, const ny::fv_it&);
+  template bool ClassifierBase <kernel_model>::_pkeClassify <false, MULTI>  (double*, ny::fv_it, const ny::fv_it&, const ny::fv_it&);
+
   template void ClassifierBase <kernel_model>::_fstClassify <true, BINARY> (double*, const ny::fv_it&, const ny::fv_it&);
   template void ClassifierBase <kernel_model>::_fstClassify <true, MULTI>  (double*, const ny::fv_it&, const ny::fv_it&);
   template void ClassifierBase <kernel_model>::_fstClassify <false, BINARY>  (double*, const ny::fv_it&, const ny::fv_it&);
