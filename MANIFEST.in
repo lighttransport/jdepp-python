@@ -24,3 +24,6 @@ include jdepp/pa.h
 include jdepp/python-binding-jdepp.cc
 include jdepp/__init__.py
 include jdepp/main.py
+include test/import-test.py
+include test/test-001.py
+include example/simple_jdepp.py
