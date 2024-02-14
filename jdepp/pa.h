@@ -1505,9 +1505,10 @@ namespace opal {
           if (! std::equal (&_w[i][0], &_w[i][_opt.nclass], &_m0[0])) ++nf;
         }
 #else
-        std::fread (&_w[0], sizeof (fl_t), _nf + 1, reader);
-        std::fread (&_sigmoid_A, sizeof (double), 1, reader);
-        std::fread (&_sigmoid_B, sizeof (double), 1, reader);
+        size_t nread = std::fread (&_w[0], sizeof (fl_t), _nf + 1, reader);
+        nread = std::fread (&_sigmoid_A, sizeof (double), 1, reader);
+        nread = std::fread (&_sigmoid_B, sizeof (double), 1, reader);
+        (void)nread;
         nf = _nf - static_cast <uint> (std::count (&_w[1], &_w[_nf + 1], fl_t (0)));
 #endif
         std::fprintf (stderr, "done (# features = %ld).\n", nf);

@@ -652,8 +652,6 @@ class PyJdepp {
     _parser = new pdep::parser(options);
     if (!_parser->load_model()) { // use setting in argv for model path
       py::print("Model load failed:", model_path);
-    } else {
-      py::print("Model load OK");
     }
 
     return _parser->model_loaded();
