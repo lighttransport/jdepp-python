@@ -4,7 +4,7 @@ set(EXE_TARGET "jdepp")
 set(PY_TARGET "jdepp_ext")
 project(${EXE_TARGET} CXX)
 
-option(JDEPP_WITH_PYTHON "Build Python module(For developer)." On)
+option(JDEPP_WITH_PYTHON "Build Python module(For developer)." Off)
 option(
     JDEPP_PREFER_LOCAL_PYTHON_INSTALLATION
     "Prefer locally-installed Python interpreter than system or conda/brew installed Python. Please specify your Python interpreter with `Python3_EXECUTABLE` cmake option if you enable this option."

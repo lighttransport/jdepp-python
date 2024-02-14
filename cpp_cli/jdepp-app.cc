@@ -19,7 +19,7 @@ static void parse_library_options(int &i, const int argc, char **argv,
         lib_args.push_back(argv[i + lib_args.size()]);
       }
 
-      printf("libsize %d\n", lib_args.size());
+      //printf("libsize %d\n", lib_args.size());
       i += lib_args.size();
       lib_args.push_back(nullptr);
     } else {

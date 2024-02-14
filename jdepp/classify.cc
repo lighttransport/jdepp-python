@@ -18,6 +18,7 @@
 #define SHIFT_LEFT_UNSIGNED_USES_SHL (((unsigned int)0xffffffff >> 1) == 0x7fffffff)
 
 namespace pecco {
+
   // (a slightly) secure conversion from string to numerical
   template <typename T> T strton (const char* s, char** error) {
     const int64_t  ret  = static_cast <int64_t>  (std::strtoll  (s, error, 10));
@@ -35,6 +36,8 @@ namespace pecco {
   { return static_cast <float> (std::strtod (s, error)); }
 #endif
 
+  // On 32bit platform, size_t == uint
+#if (SIZE_MAX > (1 << 32))
   template <> ny::uint strton <ny::uint> (const char* s, char** error) {
     int64_t ret = 0;
     char* p = const_cast <char*> (s);
@@ -47,10 +50,8 @@ namespace pecco {
     return static_cast <ny::uint> (ret);
   }
 
-  // On 32bit platform, size_t == uint
-#if (SIZE_MAX > (1 << 32))
-  template size_t    strton (const char*, char**);
 #endif
+  template size_t    strton (const char*, char**);
 
   template uint8_t   strton (const char*, char**);
   template algo_t    strton (const char*, char**);
@@ -301,7 +302,7 @@ namespace pecco {
            it != fst_key.end (); ++it)
         if ((*it)->leaf) fst_leaf.insert (*it);
       if (_opt.verbose > 0)
-        std::fprintf (stderr, " # leaf: %ld\n", fst_leaf.size ());
+        std::fprintf (stderr, " # leaf: %ld\n", long(fst_leaf.size ()));
       std::vector <const char *> str;
       std::vector <size_t>       len;
       std::vector <int>          val;
