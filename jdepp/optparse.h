@@ -47,6 +47,8 @@
 #ifndef OPTPARSE_H
 #define OPTPARSE_H
 
+#include <string.h>
+
 #ifndef OPTPARSE_API
 #  define OPTPARSE_API
 #endif
